@@ -9,11 +9,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppTrix.Splash">
 
-        <!-- 🔥 SPLASH ACTIVITY -->
+        <!-- SPLASH -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.AppTrix">  <!-- 🔥 FIX -->
+            android:theme="@style/Theme.AppTrix.Splash">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,7 +23,9 @@
         </activity>
 
         <!-- MAIN -->
-        <activity android:name=".MainActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/Theme.AppTrix" />
 
     </application>
 
