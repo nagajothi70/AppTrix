@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Apptrix" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Main Theme -->
+    <style name="Theme.AppTrix" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <!-- Splash Theme -->
+    <style name="Theme.AppTrix.Splash" parent="Theme.SplashScreen">
+
+        <item name="windowSplashScreenBackground">@color/black</item>
+
+        <!-- 🔥 REMOVE ANDROID LOGO -->
+        <item name="windowSplashScreenAnimatedIcon">@null</item>
+
+        <item name="postSplashScreenTheme">@style/Theme.AppTrix</item>
+
+    </style>
+
 </resources>
