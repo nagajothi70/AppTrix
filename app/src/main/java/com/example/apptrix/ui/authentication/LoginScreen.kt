@@ -9,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.material3.ExposedDropdownMenuDefaults.textFieldColors
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -51,7 +50,7 @@ fun LoginScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
 
-            Text("AppTrix", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Login to your Account", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
             Text("Welcome Back 👋", color = Color.LightGray, fontSize = 14.sp)
 
@@ -60,8 +59,23 @@ fun LoginScreen(navController: NavController) {
             TextField(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = { Text("Email / Phone", color = Color.LightGray) },
-                colors = textFieldColors(),
+                placeholder = { Text("Email") },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+
+                    focusedPlaceholderColor = Color.DarkGray,
+                    unfocusedPlaceholderColor = Color.DarkGray,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+
+                    cursorColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -70,7 +84,7 @@ fun LoginScreen(navController: NavController) {
             TextField(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = { Text("Password", color = Color.LightGray) },
+                placeholder = { Text("Password") },
 
                 // 👇 main logic
                 visualTransformation = if (passwordVisible)
@@ -91,7 +105,22 @@ fun LoginScreen(navController: NavController) {
                     }
                 },
 
-                colors = textFieldColors(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+
+                    focusedPlaceholderColor = Color.DarkGray,
+                    unfocusedPlaceholderColor = Color.DarkGray,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+
+                    cursorColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 

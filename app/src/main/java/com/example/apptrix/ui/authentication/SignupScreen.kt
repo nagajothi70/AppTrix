@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
-import androidx.compose.material3.ExposedDropdownMenuDefaults.textFieldColors
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -16,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -25,7 +28,7 @@ import com.google.firebase.auth.FirebaseAuth
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(navController: NavController) {
-
+    var passwordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
@@ -55,30 +58,115 @@ fun SignupScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(30.dp))
 
             TextField(value = username, onValueChange = { username = it },
-                placeholder = { Text("Username", color = Color.LightGray) },
-                colors = textFieldColors(), modifier = Modifier.fillMaxWidth())
+                placeholder = { Text("Username") },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+
+                    focusedPlaceholderColor = Color.DarkGray,
+                    unfocusedPlaceholderColor = Color.DarkGray,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+
+                    cursorColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth())
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextField(value = email, onValueChange = { email = it },
-                placeholder = { Text("Email", color = Color.LightGray) },
+                placeholder = { Text("Email") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors = textFieldColors(), modifier = Modifier.fillMaxWidth())
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+
+                    focusedPlaceholderColor = Color.DarkGray,
+                    unfocusedPlaceholderColor = Color.DarkGray,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+
+                    cursorColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth())
 
             Spacer(modifier = Modifier.height(16.dp))
 
             TextField(value = phone, onValueChange = { phone = it },
-                placeholder = { Text("Mobile Number", color = Color.LightGray) },
+                placeholder = { Text("Mobile Number") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                colors = textFieldColors(), modifier = Modifier.fillMaxWidth())
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+
+                    focusedPlaceholderColor = Color.DarkGray,
+                    unfocusedPlaceholderColor = Color.DarkGray,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+
+                    cursorColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth())
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(value = password, onValueChange = { password = it },
-                placeholder = { Text("Password", color = Color.LightGray) },
-                visualTransformation = PasswordVisualTransformation(),
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = { Text("Password") },
+
+                visualTransformation = if (passwordVisible)
+                    VisualTransformation.None
+                else
+                    PasswordVisualTransformation(),
+
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                colors = textFieldColors(), modifier = Modifier.fillMaxWidth())
+
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible)
+                                Icons.Default.Visibility
+                            else
+                                Icons.Default.VisibilityOff,
+                            contentDescription = "Toggle Password"
+                        )
+                    }
+                },
+
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+
+                    focusedPlaceholderColor = Color.DarkGray,
+                    unfocusedPlaceholderColor = Color.DarkGray,
+
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+
+                    cursorColor = Color.Black
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
