@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Apptrix" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Main Theme -->
+    <style name="Theme.AppTrix" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+    </style>
+
+    <!-- Splash Theme -->
+    <style name="Theme.AppTrix.Splash" parent="Theme.SplashScreen">
+
+        <!-- 🔥 REMOVE HEADER -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+
+        <!-- Splash background -->
+        <item name="windowSplashScreenBackground">#0D2A5C</item>
+
+        <!-- No icon -->
+        <item name="windowSplashScreenAnimatedIcon">@null</item>
+
+        <!-- Next theme -->
+        <item name="postSplashScreenTheme">@style/Theme.AppTrix</item>
+
+    </style>
+
 </resources>

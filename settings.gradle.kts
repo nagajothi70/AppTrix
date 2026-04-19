@@ -21,3 +21,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "apptrix"
 include(":app")
+include(":libraries:models")
+include(":libraries:service")
+include(":libraries:local-db")
+include(":libraries:network")
+include(":libraries:security")
