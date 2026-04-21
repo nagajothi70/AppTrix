@@ -53,11 +53,12 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material3:material3:1.2.1")
     implementation(libs.androidx.navigation.compose)
-    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
-    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.11.1") // ✅ add version
     implementation("com.google.firebase:firebase-auth:22.3.0")
+    implementation("com.google.firebase:firebase-analytics:21.5.0")
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation( "androidx.compose.material:material-icons-extended")
     implementation("androidx.biometric:biometric:1.1.0")
     testImplementation(libs.junit)
@@ -70,4 +71,5 @@ dependencies {
 
     implementation(project(":libraries:models"))
     implementation(project(":libraries:security"))
+    implementation(project(":libraries:service"))
 }

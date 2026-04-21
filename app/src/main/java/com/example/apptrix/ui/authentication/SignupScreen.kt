@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.models.sealed.Screen
 import com.example.security.SessionManager
+import com.example.service.DeviceService
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // ---------------- MAIN SCREEN ----------------
 
@@ -32,6 +34,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun SignupScreen(navController: NavController) {
 
     val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -40,7 +43,7 @@ fun SignupScreen(navController: NavController) {
 
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -67,26 +70,21 @@ fun SignupScreen(navController: NavController) {
             Spacer(Modifier.height(30.dp))
 
             AppTextField(username, { username = it }, "Username")
-
             Spacer(Modifier.height(16.dp))
 
             AppTextField(email, { email = it }, "Email", KeyboardType.Email)
-
             Spacer(Modifier.height(16.dp))
 
             AppTextField(phone, { phone = it }, "Mobile Number", KeyboardType.Phone)
-
             Spacer(Modifier.height(16.dp))
 
             TextField(
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text("Password") },
-
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
                 else PasswordVisualTransformation(),
-
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
@@ -97,7 +95,6 @@ fun SignupScreen(navController: NavController) {
                         )
                     }
                 },
-
                 colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -116,45 +113,47 @@ fun SignupScreen(navController: NavController) {
 
                     errorMessage = ""
 
-                    if (username.isBlank() &&
-                        email.isBlank() &&
-                        phone.isBlank() &&
-                        password.isBlank()
-                    ) {
+                    if (username.isBlank() || email.isBlank() || phone.isBlank() || password.isBlank()) {
                         errorMessage = "Fill all fields"
-                        return@Button
-                    }
-
-                    if (username.isBlank()) {
-                        errorMessage = "Username required"
-                        return@Button
-                    }
-
-                    if (email.isBlank()) {
-                        errorMessage = "Email required"
-                        return@Button
-                    }
-
-                    if (phone.isBlank()) {
-                        errorMessage = "Phone required"
-                        return@Button
-                    }
-
-                    if (password.isBlank()) {
-                        errorMessage = "Password required"
                         return@Button
                     }
 
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
+
                             if (task.isSuccessful) {
-                                val sessionManager = SessionManager(context)
 
-                                sessionManager.saveLoginTime() // ⭐ IMPORTANT
+                                val uid = auth.currentUser?.uid
 
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(Screen.Signup.route) { inclusive = true }
+                                if (uid == null) {
+                                    errorMessage = "User error"
+                                    return@addOnCompleteListener
                                 }
+
+                                val deviceId = DeviceService.getDeviceId(context)
+
+                                val userMap = hashMapOf(
+                                    "email" to email,
+                                    "deviceId" to deviceId
+                                )
+
+                                FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(uid)
+                                    .set(userMap)
+                                    .addOnSuccessListener {
+
+                                        val sessionManager = SessionManager(context)
+                                        sessionManager.saveLoginTime()
+
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Signup.route) { inclusive = true }
+                                        }
+
+                                    }
+                                    .addOnFailureListener {
+                                        errorMessage = "Database error"
+                                    }
 
                             } else {
                                 errorMessage = "Signup failed"
