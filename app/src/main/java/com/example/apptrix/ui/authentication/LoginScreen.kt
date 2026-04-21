@@ -1,6 +1,5 @@
 package com.example.apptrix.ui.authentication
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,8 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -27,12 +26,12 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun LoginScreen(navController: NavController) {
 
-    val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-    var passwordVisible by remember { mutableStateOf(false) }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -46,91 +45,73 @@ fun LoginScreen(navController: NavController) {
     ) {
 
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
         ) {
 
-            Text("Login to your Account", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-
-            Text("Welcome Back 👋", color = Color.LightGray, fontSize = 14.sp)
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            TextField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = { Text("Email") },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-
-                    focusedPlaceholderColor = Color.DarkGray,
-                    unfocusedPlaceholderColor = Color.DarkGray,
-
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-
-                    cursorColor = Color.Black
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+            Text(
+                "Login to your Account",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(Modifier.height(40.dp))
+
+            AppTextField(email, { email = it }, "Email", KeyboardType.Email)
+
+            Spacer(Modifier.height(16.dp))
 
             TextField(
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text("Password") },
 
-                // 👇 main logic
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
-                else
-                    PasswordVisualTransformation(),
+                else PasswordVisualTransformation(),
 
                 trailingIcon = {
-                    val icon = if (passwordVisible)
-                        Icons.Default.Visibility
-                    else
-                        Icons.Default.VisibilityOff
-
-                    IconButton(onClick = {
-                        passwordVisible = !passwordVisible
-                    }) {
-                        Icon(imageVector = icon, contentDescription = null)
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible)
+                                Icons.Default.Visibility
+                            else Icons.Default.VisibilityOff,
+                            contentDescription = null
+                        )
                     }
                 },
 
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-
-                    focusedPlaceholderColor = Color.DarkGray,
-                    unfocusedPlaceholderColor = Color.DarkGray,
-
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-
-                    cursorColor = Color.Black
-                ),
+                colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(Modifier.height(16.dp))
+
+            if (errorMessage.isNotEmpty()) {
+                Text(errorMessage, color = Color.Red)
+            }
+
+            Spacer(Modifier.height(30.dp))
 
             Button(
                 onClick = {
 
-                    if (email.isEmpty() || password.isEmpty()) {
-                        Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                    errorMessage = ""
+
+                    if (email.isBlank() && password.isBlank()) {
+                        errorMessage = "Fill all fields"
+                        return@Button
+                    }
+
+                    if (email.isBlank()) {
+                        errorMessage = "Email required"
+                        return@Button
+                    }
+
+                    if (password.isBlank()) {
+                        errorMessage = "Password required"
                         return@Button
                     }
 
@@ -138,35 +119,40 @@ fun LoginScreen(navController: NavController) {
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
 
-                                Toast.makeText(context, "Login Success", Toast.LENGTH_SHORT).show()
-
                                 navController.navigate(Screen.Home.route) {
                                     popUpTo(Screen.Login.route) { inclusive = true }
                                 }
 
                             } else {
-                                Toast.makeText(context, "Login Failed", Toast.LENGTH_SHORT).show()
+                                errorMessage = "Email or password incorrect"
                             }
                         }
-
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90E2)
-                )
+                colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
                 Text("Login", color = Color.White)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(Modifier.height(20.dp))
 
-            Row {
-                Text("Don't have an account?", color = Color.LightGray)
-                Spacer(modifier = Modifier.width(5.dp))
-                Text("Sign Up", color = Color.White,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Don't have an account? ", color = Color.LightGray)
+
+                Text(
+                    "Sign Up",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable {
                         navController.navigate(Screen.Signup.route)
-                    })
+                    }
+                )
             }
         }
     }

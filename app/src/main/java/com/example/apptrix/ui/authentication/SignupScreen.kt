@@ -1,6 +1,5 @@
 package com.example.apptrix.ui.authentication
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,17 +24,21 @@ import androidx.navigation.NavController
 import com.example.models.sealed.Screen
 import com.google.firebase.auth.FirebaseAuth
 
+// ---------------- MAIN SCREEN ----------------
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(navController: NavController) {
-    var passwordVisible by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+
     val auth = FirebaseAuth.getInstance()
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    var passwordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -53,77 +56,26 @@ fun SignupScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize()
         ) {
 
-            Text("Create Account", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(
+                "Create Account",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(Modifier.height(30.dp))
 
-            TextField(value = username, onValueChange = { username = it },
-                placeholder = { Text("Username") },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+            AppTextField(username, { username = it }, "Username")
 
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
+            Spacer(Modifier.height(16.dp))
 
-                    focusedPlaceholderColor = Color.DarkGray,
-                    unfocusedPlaceholderColor = Color.DarkGray,
+            AppTextField(email, { email = it }, "Email", KeyboardType.Email)
 
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
+            Spacer(Modifier.height(16.dp))
 
-                    cursorColor = Color.Black
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth())
+            AppTextField(phone, { phone = it }, "Mobile Number", KeyboardType.Phone)
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(value = email, onValueChange = { email = it },
-                placeholder = { Text("Email") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-
-                    focusedPlaceholderColor = Color.DarkGray,
-                    unfocusedPlaceholderColor = Color.DarkGray,
-
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-
-                    cursorColor = Color.Black
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth())
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(value = phone, onValueChange = { phone = it },
-                placeholder = { Text("Mobile Number") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-
-                    focusedPlaceholderColor = Color.DarkGray,
-                    unfocusedPlaceholderColor = Color.DarkGray,
-
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-
-                    cursorColor = Color.Black
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth())
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             TextField(
                 value = password,
@@ -132,49 +84,63 @@ fun SignupScreen(navController: NavController) {
 
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
-                else
-                    PasswordVisualTransformation(),
-
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                else PasswordVisualTransformation(),
 
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible)
                                 Icons.Default.Visibility
-                            else
-                                Icons.Default.VisibilityOff,
-                            contentDescription = "Toggle Password"
+                            else Icons.Default.VisibilityOff,
+                            contentDescription = null
                         )
                     }
                 },
 
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-
-                    focusedPlaceholderColor = Color.DarkGray,
-                    unfocusedPlaceholderColor = Color.DarkGray,
-
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-
-                    cursorColor = Color.Black
-                ),
+                colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
+
+            if (errorMessage.isNotEmpty()) {
+                Text(errorMessage, color = Color.Red)
+            }
+
+            Spacer(Modifier.height(30.dp))
 
             Button(
                 onClick = {
 
-                    if (email.isEmpty() || password.isEmpty()) {
-                        Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                    errorMessage = ""
+
+                    if (username.isBlank() &&
+                        email.isBlank() &&
+                        phone.isBlank() &&
+                        password.isBlank()
+                    ) {
+                        errorMessage = "Fill all fields"
+                        return@Button
+                    }
+
+                    if (username.isBlank()) {
+                        errorMessage = "Username required"
+                        return@Button
+                    }
+
+                    if (email.isBlank()) {
+                        errorMessage = "Email required"
+                        return@Button
+                    }
+
+                    if (phone.isBlank()) {
+                        errorMessage = "Phone required"
+                        return@Button
+                    }
+
+                    if (password.isBlank()) {
+                        errorMessage = "Password required"
                         return@Button
                     }
 
@@ -182,37 +148,87 @@ fun SignupScreen(navController: NavController) {
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
 
-                                Toast.makeText(context, "Signup Success", Toast.LENGTH_SHORT).show()
-
-                                navController.navigate(Screen.Home.route)
+                                navController.navigate(Screen.Home.route) {
+                                    popUpTo(Screen.Signup.route) { inclusive = true }
+                                }
 
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    task.exception?.message ?: "Error",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                errorMessage = "Signup failed"
                             }
                         }
-
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A90E2))
+                colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
                 Text("Sign Up", color = Color.White)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
-            Row {
-                Text("Already have an account?", color = Color.LightGray)
-                Spacer(modifier = Modifier.width(5.dp))
-                Text("Login", color = Color.White,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Already have an account? ", color = Color.LightGray)
+
+                Text(
+                    "Login",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable {
                         navController.navigate(Screen.Login.route)
-                    })
+                    }
+                )
             }
         }
+    }
+}
+@Composable
+fun appTextFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = Color.White,
+    unfocusedContainerColor = Color.White,
+
+    focusedTextColor = Color.Black,
+    unfocusedTextColor = Color.Black,
+
+    focusedPlaceholderColor = Color.DarkGray,
+    unfocusedPlaceholderColor = Color.DarkGray,
+
+    focusedIndicatorColor = Color.Transparent,
+    unfocusedIndicatorColor = Color.Transparent,
+
+    cursorColor = Color.Black
+)
+
+@Composable
+fun AppTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(placeholder) },
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        colors = appTextFieldColors(),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@Composable
+fun ErrorText(message: String) {
+    if (message.isNotEmpty()) {
+        Text(
+            text = message,
+            color = Color.Red,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
