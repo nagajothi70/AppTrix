@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.models.sealed.Screen
+import com.example.security.SessionManager
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -119,10 +120,15 @@ fun LoginScreen(navController: NavController) {
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
 
+                                val context = navController.context
+                                val sessionManager = SessionManager(context)
+
+                                sessionManager.saveLoginTime() // ⭐ VERY IMPORTANT
+
                                 navController.navigate(Screen.Home.route) {
                                     popUpTo(Screen.Login.route) { inclusive = true }
-                                }
 
+                                }
                             } else {
                                 errorMessage = "Email or password incorrect"
                             }
