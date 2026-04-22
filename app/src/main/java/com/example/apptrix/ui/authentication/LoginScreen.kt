@@ -31,13 +31,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
-    val viewModel = AuthViewModel()
+
+    val viewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) } // 🔥 NEW
 
     Box(
         modifier = Modifier
@@ -72,11 +75,9 @@ fun LoginScreen(navController: NavController) {
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text("Password") },
-
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
                 else PasswordVisualTransformation(),
-
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
@@ -87,7 +88,6 @@ fun LoginScreen(navController: NavController) {
                         )
                     }
                 },
-
                 colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -95,9 +95,7 @@ fun LoginScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            if (errorMessage.isNotEmpty()) {
-                Text(errorMessage, color = Color.Red)
-            }
+            ErrorText(errorMessage)
 
             Spacer(Modifier.height(30.dp))
 
@@ -113,22 +111,33 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
+                    isLoading = true // 🔥 START loading
+
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
+
                             if (task.isSuccessful) {
 
                                 val uid = auth.currentUser?.uid
+
+                                if (uid == null) {
+                                    isLoading = false
+                                    errorMessage = "User error"
+                                    return@addOnCompleteListener
+                                }
+
                                 val currentDeviceId = DeviceService.getDeviceId(context)
 
                                 FirebaseFirestore.getInstance()
                                     .collection("users")
-                                    .document(uid!!)
+                                    .document(uid)
                                     .get()
                                     .addOnSuccessListener { document ->
 
                                         if (!document.exists()) {
+                                            isLoading = false
                                             errorMessage = "User data not found"
-                                            FirebaseAuth.getInstance().signOut()
+                                            auth.signOut()
                                             return@addOnSuccessListener
                                         }
 
@@ -139,18 +148,28 @@ fun LoginScreen(navController: NavController) {
                                             val sessionManager = SessionManager(context)
                                             sessionManager.saveLoginTime()
 
-                                            navController.navigate(Screen.Home.route) {
+                                            isLoading = false // 🔥 STOP loading
+
+                                            navController.navigate(Screen.AuthLoading.route) {
                                                 popUpTo(Screen.Login.route) { inclusive = true }
                                             }
 
                                         } else {
-                                            FirebaseAuth.getInstance().signOut()
-                                            errorMessage = "This account is already used on another device"
+                                            isLoading = false
+                                            auth.signOut()
+                                            errorMessage =
+                                                "Account already used on another device"
                                         }
+                                    }
+                                    .addOnFailureListener {
+                                        isLoading = false
+                                        errorMessage = "Database error"
                                     }
 
                             } else {
-                                errorMessage = "Email or password incorrect"
+                                isLoading = false
+                                errorMessage =
+                                    task.exception?.message ?: "Login failed"
                             }
                         }
                 },
@@ -180,6 +199,11 @@ fun LoginScreen(navController: NavController) {
                     }
                 )
             }
+        }
+
+        // 🔥 LOADING OVERLAY
+        if (isLoading) {
+            AuthLoadingScreen(navController)
         }
     }
 }

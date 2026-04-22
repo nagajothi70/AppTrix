@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.*
 import com.example.apptrix.ui.HomeScreen
+import com.example.apptrix.ui.authentication.AuthLoadingScreen
+import com.example.apptrix.ui.authentication.AuthLoadingView
 import com.example.apptrix.ui.authentication.BiometricScreen
 import com.example.apptrix.ui.authentication.LoginScreen
 import com.example.apptrix.ui.authentication.SignupScreen
@@ -59,6 +61,10 @@ fun AppNav() {
 
         composable(Screen.Biometric.route) {
             BiometricScreen(navController)
+        }
+
+        composable(Screen.AuthLoading.route) {
+            AuthLoadingScreen(navController)
         }
     }
 }

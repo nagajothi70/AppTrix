@@ -47,7 +47,7 @@ fun BiometricScreen(navController: NavController) {
                 override fun onAuthenticationSucceeded(
                     result: BiometricPrompt.AuthenticationResult
                 ) {
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.AuthLoading.route) {
                         popUpTo(Screen.Biometric.route) { inclusive = true }
                     }
                 }

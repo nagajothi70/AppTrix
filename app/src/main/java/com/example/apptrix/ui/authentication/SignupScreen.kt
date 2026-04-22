@@ -29,13 +29,12 @@ import com.example.service.DeviceService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-// ---------------- MAIN SCREEN ----------------
-
 @SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(navController: NavController) {
-    val viewModel = AuthViewModel()
+
+    val viewModel: AuthViewModel = viewModel() // ✅ correct way
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
 
@@ -105,13 +104,11 @@ fun SignupScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            PasswordStrengthUI(password)
+            getPasswordStrength(password)
 
             Spacer(Modifier.height(10.dp))
 
-            if (errorMessage.isNotEmpty()) {
-                Text(errorMessage, color = Color.Red)
-            }
+            ErrorText(errorMessage)
 
             Spacer(Modifier.height(30.dp))
 
@@ -120,13 +117,16 @@ fun SignupScreen(navController: NavController) {
 
                     errorMessage = ""
 
-                    val validation = viewModel.validateSignup(username, email, phone, password)
+                    val validation = viewModel.validateSignup(
+                        username, email, phone, password
+                    )
 
                     if (validation.isNotEmpty()) {
                         errorMessage = validation
                         return@Button
                     }
 
+                    // 🔥 Firebase call
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
 
@@ -155,7 +155,8 @@ fun SignupScreen(navController: NavController) {
                                         val sessionManager = SessionManager(context)
                                         sessionManager.saveLoginTime()
 
-                                        navController.navigate(Screen.Home.route) {
+                                        // ✅ Go to loading screen
+                                        navController.navigate(Screen.AuthLoading.route) {
                                             popUpTo(Screen.Signup.route) { inclusive = true }
                                         }
 
@@ -165,7 +166,7 @@ fun SignupScreen(navController: NavController) {
                                     }
 
                             } else {
-                                errorMessage = "Signup failed"
+                                errorMessage = task.exception?.message ?: "Signup failed"
                             }
                         }
                 },
@@ -196,60 +197,6 @@ fun SignupScreen(navController: NavController) {
                 )
             }
         }
-    }
-}
-
-@Composable
-fun PasswordStrengthUI(password: String) {
-
-    val strength = getPasswordStrength(password)
-
-    val strengthText = when (strength) {
-        0,1 -> "Weak"
-        2,3 -> "Medium"
-        else -> "Strong"
-    }
-
-    val strengthColor = when (strength) {
-        0,1 -> Color.Red
-        2,3 -> Color(0xFFFFA500) // Orange
-        else -> Color.Green
-    }
-
-    Column {
-
-        // 🔥 Strength Bar
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-        ) {
-            repeat(5) { index ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(end = 2.dp)
-                        .background(
-                            if (index < strength) strengthColor else Color.LightGray,
-                            shape = RoundedCornerShape(50)
-                        )
-                )
-            }
-        }
-
-        Spacer(Modifier.height(6.dp))
-
-        Text(
-            text = strengthText,
-            color = strengthColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        // 🔥 Chip Style Rules (clean look)
     }
 }
 
