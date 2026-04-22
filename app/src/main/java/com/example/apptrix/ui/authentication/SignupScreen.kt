@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.models.sealed.Screen
+import com.example.security.SessionManager
 import com.google.firebase.auth.FirebaseAuth
 
 // ---------------- MAIN SCREEN ----------------
@@ -39,7 +40,7 @@ fun SignupScreen(navController: NavController) {
 
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -147,6 +148,9 @@ fun SignupScreen(navController: NavController) {
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
+                                val sessionManager = SessionManager(context)
+
+                                sessionManager.saveLoginTime() // ⭐ IMPORTANT
 
                                 navController.navigate(Screen.Home.route) {
                                     popUpTo(Screen.Signup.route) { inclusive = true }
