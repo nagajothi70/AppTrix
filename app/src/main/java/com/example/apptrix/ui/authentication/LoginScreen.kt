@@ -1,5 +1,6 @@
 package com.example.apptrix.ui.authentication
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,13 +23,17 @@ import androidx.navigation.NavController
 import com.example.models.sealed.Screen
 import com.example.security.SessionManager
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.platform.LocalContext
+import com.example.service.DeviceService
+import com.google.firebase.firestore.FirebaseFirestore
 
+@SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
-
+    val viewModel = AuthViewModel()
     val auth = FirebaseAuth.getInstance()
-
+    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -101,18 +106,10 @@ fun LoginScreen(navController: NavController) {
 
                     errorMessage = ""
 
-                    if (email.isBlank() && password.isBlank()) {
-                        errorMessage = "Fill all fields"
-                        return@Button
-                    }
+                    val validation = viewModel.validateLogin(email, password)
 
-                    if (email.isBlank()) {
-                        errorMessage = "Email required"
-                        return@Button
-                    }
-
-                    if (password.isBlank()) {
-                        errorMessage = "Password required"
+                    if (validation.isNotEmpty()) {
+                        errorMessage = validation
                         return@Button
                     }
 
@@ -120,15 +117,38 @@ fun LoginScreen(navController: NavController) {
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
 
-                                val context = navController.context
-                                val sessionManager = SessionManager(context)
+                                val uid = auth.currentUser?.uid
+                                val currentDeviceId = DeviceService.getDeviceId(context)
 
-                                sessionManager.saveLoginTime() // ⭐ VERY IMPORTANT
+                                FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(uid!!)
+                                    .get()
+                                    .addOnSuccessListener { document ->
 
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(Screen.Login.route) { inclusive = true }
+                                        if (!document.exists()) {
+                                            errorMessage = "User data not found"
+                                            FirebaseAuth.getInstance().signOut()
+                                            return@addOnSuccessListener
+                                        }
 
-                                }
+                                        val savedDeviceId = document.getString("deviceId")
+
+                                        if (currentDeviceId == savedDeviceId) {
+
+                                            val sessionManager = SessionManager(context)
+                                            sessionManager.saveLoginTime()
+
+                                            navController.navigate(Screen.Home.route) {
+                                                popUpTo(Screen.Login.route) { inclusive = true }
+                                            }
+
+                                        } else {
+                                            FirebaseAuth.getInstance().signOut()
+                                            errorMessage = "This account is already used on another device"
+                                        }
+                                    }
+
                             } else {
                                 errorMessage = "Email or password incorrect"
                             }

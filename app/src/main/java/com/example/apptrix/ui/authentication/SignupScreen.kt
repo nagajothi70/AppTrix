@@ -1,5 +1,6 @@
 package com.example.apptrix.ui.authentication
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,18 +21,23 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.models.sealed.Screen
 import com.example.security.SessionManager
+import com.example.service.DeviceService
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 // ---------------- MAIN SCREEN ----------------
 
+@SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignupScreen(navController: NavController) {
-
+    val viewModel = AuthViewModel()
     val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -40,7 +46,7 @@ fun SignupScreen(navController: NavController) {
 
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -67,26 +73,21 @@ fun SignupScreen(navController: NavController) {
             Spacer(Modifier.height(30.dp))
 
             AppTextField(username, { username = it }, "Username")
-
             Spacer(Modifier.height(16.dp))
 
             AppTextField(email, { email = it }, "Email", KeyboardType.Email)
-
             Spacer(Modifier.height(16.dp))
 
             AppTextField(phone, { phone = it }, "Mobile Number", KeyboardType.Phone)
-
             Spacer(Modifier.height(16.dp))
 
             TextField(
                 value = password,
                 onValueChange = { password = it },
                 placeholder = { Text("Password") },
-
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
                 else PasswordVisualTransformation(),
-
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
@@ -97,13 +98,16 @@ fun SignupScreen(navController: NavController) {
                         )
                     }
                 },
-
                 colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(Modifier.height(16.dp))
+
+            PasswordStrengthUI(password)
+
+            Spacer(Modifier.height(10.dp))
 
             if (errorMessage.isNotEmpty()) {
                 Text(errorMessage, color = Color.Red)
@@ -116,45 +120,49 @@ fun SignupScreen(navController: NavController) {
 
                     errorMessage = ""
 
-                    if (username.isBlank() &&
-                        email.isBlank() &&
-                        phone.isBlank() &&
-                        password.isBlank()
-                    ) {
-                        errorMessage = "Fill all fields"
-                        return@Button
-                    }
+                    val validation = viewModel.validateSignup(username, email, phone, password)
 
-                    if (username.isBlank()) {
-                        errorMessage = "Username required"
-                        return@Button
-                    }
-
-                    if (email.isBlank()) {
-                        errorMessage = "Email required"
-                        return@Button
-                    }
-
-                    if (phone.isBlank()) {
-                        errorMessage = "Phone required"
-                        return@Button
-                    }
-
-                    if (password.isBlank()) {
-                        errorMessage = "Password required"
+                    if (validation.isNotEmpty()) {
+                        errorMessage = validation
                         return@Button
                     }
 
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
+
                             if (task.isSuccessful) {
-                                val sessionManager = SessionManager(context)
 
-                                sessionManager.saveLoginTime() // ⭐ IMPORTANT
+                                val uid = auth.currentUser?.uid
 
-                                navController.navigate(Screen.Home.route) {
-                                    popUpTo(Screen.Signup.route) { inclusive = true }
+                                if (uid == null) {
+                                    errorMessage = "User error"
+                                    return@addOnCompleteListener
                                 }
+
+                                val deviceId = DeviceService.getDeviceId(context)
+
+                                val userMap = hashMapOf(
+                                    "email" to email,
+                                    "deviceId" to deviceId
+                                )
+
+                                FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(uid)
+                                    .set(userMap)
+                                    .addOnSuccessListener {
+
+                                        val sessionManager = SessionManager(context)
+                                        sessionManager.saveLoginTime()
+
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Signup.route) { inclusive = true }
+                                        }
+
+                                    }
+                                    .addOnFailureListener {
+                                        errorMessage = "Database error"
+                                    }
 
                             } else {
                                 errorMessage = "Signup failed"
@@ -190,6 +198,61 @@ fun SignupScreen(navController: NavController) {
         }
     }
 }
+
+@Composable
+fun PasswordStrengthUI(password: String) {
+
+    val strength = getPasswordStrength(password)
+
+    val strengthText = when (strength) {
+        0,1 -> "Weak"
+        2,3 -> "Medium"
+        else -> "Strong"
+    }
+
+    val strengthColor = when (strength) {
+        0,1 -> Color.Red
+        2,3 -> Color(0xFFFFA500) // Orange
+        else -> Color.Green
+    }
+
+    Column {
+
+        // 🔥 Strength Bar
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+        ) {
+            repeat(5) { index ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(end = 2.dp)
+                        .background(
+                            if (index < strength) strengthColor else Color.LightGray,
+                            shape = RoundedCornerShape(50)
+                        )
+                )
+            }
+        }
+
+        Spacer(Modifier.height(6.dp))
+
+        Text(
+            text = strengthText,
+            color = strengthColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        // 🔥 Chip Style Rules (clean look)
+    }
+}
+
 @Composable
 fun appTextFieldColors() = TextFieldDefaults.colors(
     focusedContainerColor = Color.White,
@@ -235,4 +298,16 @@ fun ErrorText(message: String) {
             modifier = Modifier.padding(top = 4.dp)
         )
     }
+}
+
+fun getPasswordStrength(password: String): Int {
+    var score = 0
+
+    if (password.length >= 8) score++
+    if (password.any { it.isUpperCase() }) score++
+    if (password.any { it.isLowerCase() }) score++
+    if (password.any { it.isDigit() }) score++
+    if (password.any { !it.isLetterOrDigit() }) score++
+
+    return score
 }
