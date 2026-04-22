@@ -85,79 +85,96 @@ fun BiometricScreen(navController: NavController) {
                     listOf(Color(0xFF0D2A5C), Color(0xFF123E7C))
                 )
             )
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
     ) {
-
-        Card(
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(Color.White),
+        // 🔥 MAIN CARD
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+                .fillMaxSize()
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
         ) {
 
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(Color.White),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
 
-                Icon(
-                    imageVector = Icons.Outlined.Lock,
-                    contentDescription = "Lock",
-                    tint = Color(0xFF4A90E2),
-                    modifier = Modifier.size(60.dp)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Verify Your Identity",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Use your fingerprint to securely continue",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(90.dp)
-                        .background(
-                            Color(0x114A90E2),
-                            shape = RoundedCornerShape(50)
-                        ),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
                     Icon(
-                        imageVector = Icons.Outlined.Fingerprint,
-                        contentDescription = "Fingerprint",
+                        imageVector = Icons.Outlined.Lock,
+                        contentDescription = "Lock",
                         tint = Color(0xFF4A90E2),
-                        modifier = Modifier.size(50.dp)
+                        modifier = Modifier.size(60.dp)
                     )
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = {
-                        showBiometricPrompt() // 🔥 retry here
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
-                ) {
-                    Text("Scan Fingerprint", color = Color.White)
+                    Text(
+                        text = "Verify Your Identity",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Use your fingerprint to securely continue",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(90.dp)
+                            .background(
+                                Color(0x114A90E2),
+                                shape = RoundedCornerShape(50)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Fingerprint,
+                            contentDescription = "Fingerprint",
+                            tint = Color(0xFF4A90E2),
+                            modifier = Modifier.size(50.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = { showBiometricPrompt() },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
+                    ) {
+                        Text("Scan Fingerprint", color = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 👇 OPTIONAL TEXT BUTTON (extra UX)
+                    TextButton(
+                        onClick = {
+                            navController.navigate(Screen.Login.route) {
+                                popUpTo(Screen.Biometric.route) { inclusive = true }
+                            }
+                        }
+                    ) {
+                        Text("Use password instead", color = Color.Gray)
+                    }
                 }
             }
         }
