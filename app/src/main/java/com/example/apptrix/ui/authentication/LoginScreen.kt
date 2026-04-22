@@ -1,5 +1,6 @@
 package com.example.apptrix.ui.authentication
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,10 +27,11 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.service.DeviceService
 import com.google.firebase.firestore.FirebaseFirestore
 
+@SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
-
+    val viewModel = AuthViewModel()
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
@@ -104,18 +106,10 @@ fun LoginScreen(navController: NavController) {
 
                     errorMessage = ""
 
-                    if (email.isBlank() && password.isBlank()) {
-                        errorMessage = "Fill all fields"
-                        return@Button
-                    }
+                    val validation = viewModel.validateLogin(email, password)
 
-                    if (email.isBlank()) {
-                        errorMessage = "Email required"
-                        return@Button
-                    }
-
-                    if (password.isBlank()) {
-                        errorMessage = "Password required"
+                    if (validation.isNotEmpty()) {
+                        errorMessage = validation
                         return@Button
                     }
 
@@ -150,7 +144,6 @@ fun LoginScreen(navController: NavController) {
                                             }
 
                                         } else {
-
                                             FirebaseAuth.getInstance().signOut()
                                             errorMessage = "This account is already used on another device"
                                         }
