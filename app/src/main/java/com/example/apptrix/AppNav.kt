@@ -18,6 +18,7 @@ import com.example.apptrix.ui.authentication.AuthLoadingScreen
 import com.example.apptrix.ui.authentication.AuthLoadingView
 import com.example.apptrix.ui.authentication.BiometricScreen
 import com.example.apptrix.ui.authentication.LoginScreen
+import com.example.apptrix.ui.authentication.OtpScreen
 import com.example.apptrix.ui.authentication.SignupScreen
 import com.example.models.sealed.Screen
 import com.example.security.SessionManager
@@ -65,6 +66,11 @@ fun AppNav() {
 
         composable(Screen.AuthLoading.route) {
             AuthLoadingScreen(navController)
+        }
+
+        composable("otp/{phone}") { backStackEntry ->
+            val phone = backStackEntry.arguments?.getString("phone") ?: ""
+            OtpScreen(navController, phone)
         }
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -40,13 +41,31 @@ fun SignupScreen(navController: NavController) {
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     var isLoading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
+    // 🔥 OTP verification state
+    val isPhoneVerified =
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getStateFlow("phone_verified", false)
+            ?.collectAsState()?.value ?: false
+
+    val verifiedPhone =
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getStateFlow("verified_phone", "")
+            ?.collectAsState()?.value ?: ""
+
+    var phone by rememberSaveable  { mutableStateOf(verifiedPhone) }
+    LaunchedEffect(verifiedPhone) {
+        if (verifiedPhone.isNotEmpty()) {
+            phone = verifiedPhone
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -63,12 +82,7 @@ fun SignupScreen(navController: NavController) {
             modifier = Modifier.fillMaxSize()
         ) {
 
-            Text(
-                "Create Account",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+            Text("Create Account", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
             Spacer(Modifier.height(30.dp))
 
@@ -86,13 +100,47 @@ fun SignupScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            AppTextField(phone, {
-                phone = it
-                errorMessage = ""
-            }, "Mobile Number", KeyboardType.Phone)
+            // 🔥 PHONE + VERIFY
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                TextField(
+                    value = phone,
+                    onValueChange = {
+                        phone = it
+                        errorMessage = ""
+                    },
+                    placeholder = { Text("Mobile Number") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    colors = appTextFieldColors(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Button(
+                    onClick = {
+                        if (phone.length < 10) {
+                            errorMessage = "Enter valid phone number"
+                            return@Button
+                        }
+
+                        navController.navigate("${Screen.Otp.route}/$phone")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        if (isPhoneVerified) Color(0xFF2ECC71) else Color(0xFF4A90E2)
+                    )
+                ) {
+                    Text(if (isPhoneVerified) "Verified" else "Verify", color = Color.White)
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 
+            // PASSWORD
             TextField(
                 value = password,
                 onValueChange = {
@@ -100,11 +148,9 @@ fun SignupScreen(navController: NavController) {
                     errorMessage = ""
                 },
                 placeholder = { Text("Password") },
-
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
                 else PasswordVisualTransformation(),
-
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
@@ -115,7 +161,6 @@ fun SignupScreen(navController: NavController) {
                         )
                     }
                 },
-
                 colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -131,6 +176,11 @@ fun SignupScreen(navController: NavController) {
                 onClick = {
 
                     errorMessage = ""
+
+                    if (!isPhoneVerified) {
+                        errorMessage = "Please verify your phone number"
+                        return@Button
+                    }
 
                     val validation = viewModel.validateSignup(
                         username, email, phone, password
@@ -150,17 +200,13 @@ fun SignupScreen(navController: NavController) {
 
                             if (task.isSuccessful) {
 
-                                val uid = auth.currentUser?.uid
-
-                                if (uid == null) {
-                                    errorMessage = "User error"
-                                    return@addOnCompleteListener
-                                }
+                                val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
 
                                 val deviceId = DeviceService.getDeviceId(context)
 
                                 val userMap = hashMapOf(
                                     "email" to email,
+                                    "phone" to phone,
                                     "deviceId" to deviceId
                                 )
 
@@ -170,27 +216,19 @@ fun SignupScreen(navController: NavController) {
                                     .set(userMap)
                                     .addOnSuccessListener {
 
-                                        val sessionManager = SessionManager(context)
-                                        sessionManager.saveLoginTime()
+                                        SessionManager(context).saveLoginTime()
 
                                         navController.navigate(Screen.AuthLoading.route) {
                                             popUpTo(Screen.Signup.route) { inclusive = true }
                                         }
-
                                     }
-                                    .addOnFailureListener {
-                                        errorMessage = "Database error"
-                                    }
-
                             } else {
                                 errorMessage = task.exception?.message ?: "Signup failed"
                             }
                         }
                 },
                 enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
@@ -204,24 +242,6 @@ fun SignupScreen(navController: NavController) {
                 } else {
                     Text("Sign Up", color = Color.White)
                 }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text("Already have an account? ", color = Color.LightGray)
-
-                Text(
-                    "Login",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable {
-                        navController.navigate(Screen.Login.route)
-                    }
-                )
             }
         }
     }
