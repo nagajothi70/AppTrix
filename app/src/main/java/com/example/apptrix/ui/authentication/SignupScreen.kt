@@ -34,7 +34,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 @Composable
 fun SignupScreen(navController: NavController) {
 
-    val viewModel: AuthViewModel = viewModel() // ✅ correct way
+    val viewModel: AuthViewModel = viewModel()
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
 
@@ -43,6 +43,7 @@ fun SignupScreen(navController: NavController) {
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    var isLoading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -71,22 +72,39 @@ fun SignupScreen(navController: NavController) {
 
             Spacer(Modifier.height(30.dp))
 
-            AppTextField(username, { username = it }, "Username")
+            AppTextField(username, {
+                username = it
+                errorMessage = ""
+            }, "Username")
+
             Spacer(Modifier.height(16.dp))
 
-            AppTextField(email, { email = it }, "Email", KeyboardType.Email)
+            AppTextField(email, {
+                email = it
+                errorMessage = ""
+            }, "Email", KeyboardType.Email)
+
             Spacer(Modifier.height(16.dp))
 
-            AppTextField(phone, { phone = it }, "Mobile Number", KeyboardType.Phone)
+            AppTextField(phone, {
+                phone = it
+                errorMessage = ""
+            }, "Mobile Number", KeyboardType.Phone)
+
             Spacer(Modifier.height(16.dp))
 
             TextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    errorMessage = ""
+                },
                 placeholder = { Text("Password") },
+
                 visualTransformation = if (passwordVisible)
                     VisualTransformation.None
                 else PasswordVisualTransformation(),
+
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
@@ -97,16 +115,13 @@ fun SignupScreen(navController: NavController) {
                         )
                     }
                 },
+
                 colors = appTextFieldColors(),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(Modifier.height(16.dp))
-
-            getPasswordStrength(password)
-
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
 
             ErrorText(errorMessage)
 
@@ -126,9 +141,12 @@ fun SignupScreen(navController: NavController) {
                         return@Button
                     }
 
-                    // 🔥 Firebase call
+                    isLoading = true
+
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
+
+                            isLoading = false
 
                             if (task.isSuccessful) {
 
@@ -155,7 +173,6 @@ fun SignupScreen(navController: NavController) {
                                         val sessionManager = SessionManager(context)
                                         sessionManager.saveLoginTime()
 
-                                        // ✅ Go to loading screen
                                         navController.navigate(Screen.AuthLoading.route) {
                                             popUpTo(Screen.Signup.route) { inclusive = true }
                                         }
@@ -170,13 +187,23 @@ fun SignupScreen(navController: NavController) {
                             }
                         }
                 },
+                enabled = !isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
-                Text("Sign Up", color = Color.White)
+
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Sign Up", color = Color.White)
+                }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -199,6 +226,7 @@ fun SignupScreen(navController: NavController) {
         }
     }
 }
+
 
 @Composable
 fun appTextFieldColors() = TextFieldDefaults.colors(
@@ -245,16 +273,4 @@ fun ErrorText(message: String) {
             modifier = Modifier.padding(top = 4.dp)
         )
     }
-}
-
-fun getPasswordStrength(password: String): Int {
-    var score = 0
-
-    if (password.length >= 8) score++
-    if (password.any { it.isUpperCase() }) score++
-    if (password.any { it.isLowerCase() }) score++
-    if (password.any { it.isDigit() }) score++
-    if (password.any { !it.isLetterOrDigit() }) score++
-
-    return score
 }

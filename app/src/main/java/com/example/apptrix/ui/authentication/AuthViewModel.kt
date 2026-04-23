@@ -28,31 +28,28 @@ class AuthViewModel () : ViewModel() {
 
         if (username.isBlank()) return "Enter username"
         if (email.isBlank()) return "Enter email"
-        if (phone.isBlank()) return "Enter phone"
+        if (phone.isBlank()) return "Enter mobile number"
         if(!isValidEmail(email)) return "Invalid email format"
-
         val passwordError = validatePassword(password)
         if (passwordError.isNotEmpty()) return passwordError
-
         return ""
     }
-
     fun validatePassword(password: String): String {
 
         if (password.length < 8)
             return "Password must be at least 8 characters"
 
         if (!password.any { it.isUpperCase() })
-            return "Must contain 1 uppercase letter"
+            return "Password must contain 1 uppercase letter"
 
         if (!password.any { it.isLowerCase() })
-            return "Must contain 1 lowercase letter"
+            return "Password must contain 1 lowercase letter"
 
         if (!password.any { it.isDigit() })
-            return "Must contain 1 number"
+            return "Password must contain 1 number"
 
         if (!password.any { !it.isLetterOrDigit() })
-            return "Must contain 1 special character"
+            return "Password must contain 1 special character"
 
         return ""
     }
