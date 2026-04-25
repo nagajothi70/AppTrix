@@ -6,6 +6,7 @@ import androidx.navigation.compose.*
 import com.example.apptrix.ui.HomeScreen
 import com.example.apptrix.ui.authentication.AuthLoadingScreen
 import com.example.apptrix.ui.authentication.BiometricScreen
+import com.example.apptrix.ui.authentication.EmailVerificationScreen
 import com.example.apptrix.ui.authentication.ForgotPasswordScreen
 import com.example.apptrix.ui.authentication.LoginScreen
 import com.example.apptrix.ui.authentication.OtpScreen
@@ -64,6 +65,11 @@ fun AppNav() {
 
         composable(Screen.ForgotPassword.route) {
             ForgotPasswordScreen(navController)
+        }
+
+        composable("${Screen.EmailVerify.route}/{email}") { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            EmailVerificationScreen(navController, email)
         }
     }
 }

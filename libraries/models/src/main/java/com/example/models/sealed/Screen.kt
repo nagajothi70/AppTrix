@@ -8,4 +8,5 @@ sealed class Screen(val route: String) {
     object AuthLoading : Screen("auth_loading")
     object Otp : Screen("otp")
     object ForgotPassword : Screen("forgot_password")
+    object EmailVerify : Screen("email_verify")
 }

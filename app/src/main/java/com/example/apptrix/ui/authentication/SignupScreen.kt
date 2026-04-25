@@ -221,18 +221,14 @@ fun SignupScreen(navController: NavController) {
 
                                                 if (verifyTask.isSuccessful) {
 
-                                                    auth.signOut()
+                                                    // ❌ REMOVE signOut()
 
-                                                    errorMessage =
-                                                        "Verification mail sent. Verify & login."
-
-                                                    navController.navigate(Screen.Login.route) {
+                                                    navController.navigate("${Screen.EmailVerify.route}/$email") {
                                                         popUpTo(Screen.Signup.route) { inclusive = true }
                                                     }
 
                                                 } else {
-                                                    errorMessage =
-                                                        "Failed to send verification email"
+                                                    errorMessage = "Failed to send verification email"
                                                 }
                                             }
                                     }
