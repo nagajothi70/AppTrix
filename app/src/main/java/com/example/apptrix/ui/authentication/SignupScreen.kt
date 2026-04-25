@@ -47,7 +47,6 @@ fun SignupScreen(navController: NavController) {
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // 🔥 OTP verification state
     val isPhoneVerified =
         navController.currentBackStackEntry
             ?.savedStateHandle
@@ -60,12 +59,14 @@ fun SignupScreen(navController: NavController) {
             ?.getStateFlow("verified_phone", "")
             ?.collectAsState()?.value ?: ""
 
-    var phone by rememberSaveable  { mutableStateOf(verifiedPhone) }
+    var phone by rememberSaveable { mutableStateOf(verifiedPhone) }
+
     LaunchedEffect(verifiedPhone) {
         if (verifiedPhone.isNotEmpty()) {
             phone = verifiedPhone
         }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -100,7 +101,6 @@ fun SignupScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // 🔥 PHONE + VERIFY
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -125,7 +125,6 @@ fun SignupScreen(navController: NavController) {
                             errorMessage = "Enter valid phone number"
                             return@Button
                         }
-
                         navController.navigate("${Screen.Otp.route}/$phone")
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -140,7 +139,6 @@ fun SignupScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            // PASSWORD
             TextField(
                 value = password,
                 onValueChange = {
@@ -200,7 +198,8 @@ fun SignupScreen(navController: NavController) {
 
                             if (task.isSuccessful) {
 
-                                val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+                                val user = auth.currentUser
+                                val uid = user?.uid ?: return@addOnCompleteListener
 
                                 val deviceId = DeviceService.getDeviceId(context)
 
@@ -216,14 +215,31 @@ fun SignupScreen(navController: NavController) {
                                     .set(userMap)
                                     .addOnSuccessListener {
 
-                                        SessionManager(context).saveLoginTime()
+                                        // 🔥 Email verification
+                                        user.sendEmailVerification()
+                                            .addOnCompleteListener { verifyTask ->
 
-                                        navController.navigate(Screen.AuthLoading.route) {
-                                            popUpTo(Screen.Signup.route) { inclusive = true }
-                                        }
+                                                if (verifyTask.isSuccessful) {
+
+                                                    auth.signOut()
+
+                                                    errorMessage =
+                                                        "Verification mail sent. Verify & login."
+
+                                                    navController.navigate(Screen.Login.route) {
+                                                        popUpTo(Screen.Signup.route) { inclusive = true }
+                                                    }
+
+                                                } else {
+                                                    errorMessage =
+                                                        "Failed to send verification email"
+                                                }
+                                            }
                                     }
+
                             } else {
-                                errorMessage = task.exception?.message ?: "Signup failed"
+                                errorMessage =
+                                    task.exception?.message ?: "Signup failed"
                             }
                         }
                 },
@@ -246,7 +262,6 @@ fun SignupScreen(navController: NavController) {
         }
     }
 }
-
 
 @Composable
 fun appTextFieldColors() = TextFieldDefaults.colors(

@@ -129,6 +129,8 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
+
+
                     isLoading = true
 
                     Log.d("LOGIN_DEBUG", "Login button clicked")
@@ -146,70 +148,88 @@ fun LoginScreen(navController: NavController) {
 
                             if (task.isSuccessful) {
 
-                                val uid = auth.currentUser?.uid
-                                Log.d("LOGIN_DEBUG", "UID: $uid")
+                                val user = auth.currentUser
 
-                                if (uid == null) {
-                                    isLoading = false
-                                    errorMessage = "User error"
-                                    return@addOnCompleteListener
-                                }
+                                user?.reload()?.addOnCompleteListener {
 
-                                val currentDeviceId = DeviceService.getDeviceId(context)
-                                Log.d("LOGIN_DEBUG", "Current Device ID: $currentDeviceId")
+                                    if (user == null || !user.isEmailVerified){
+                                        auth.signOut()
+                                        isLoading = false
+                                        errorMessage = "Please verify your email first"
+                                        return@addOnCompleteListener
+                                    }
 
-                                FirebaseFirestore.getInstance()
-                                    .collection("users")
-                                    .document(uid)
-                                    .get()
-                                    .addOnSuccessListener { document ->
+                                    val uid = auth.currentUser?.uid
+                                    Log.d("LOGIN_DEBUG", "UID: $uid")
 
-                                        Log.d("LOGIN_DEBUG", "Firestore success")
+                                    if (uid == null) {
+                                        isLoading = false
+                                        errorMessage = "User error"
+                                        return@addOnCompleteListener
+                                    }
 
-                                        if (!document.exists()) {
-                                            isLoading = false
-                                            errorMessage = "User data not found"
-                                            auth.signOut()
-                                            Log.d("LOGIN_DEBUG", "User document not found")
-                                            return@addOnSuccessListener
-                                        }
+                                    val currentDeviceId = DeviceService.getDeviceId(context)
+                                    Log.d("LOGIN_DEBUG", "Current Device ID: $currentDeviceId")
 
-                                        val savedDeviceId = document.getString("deviceId")
-                                        Log.d("LOGIN_DEBUG", "Saved Device ID: $savedDeviceId")
+                                    FirebaseFirestore.getInstance()
+                                        .collection("users")
+                                        .document(uid)
+                                        .get()
+                                        .addOnSuccessListener { document ->
 
-                                        // 🔥 CHANGE ONLY THIS BLOCK INSIDE SUCCESS
+                                            Log.d("LOGIN_DEBUG", "Firestore success")
 
-                                        if (currentDeviceId == savedDeviceId) {
-
-                                            Log.d("LOGIN_DEBUG", "Device matched → LOGIN SUCCESS")
-
-                                            val sessionManager = SessionManager(context)
-                                            sessionManager.saveLoginTime()
-
-                                            isLoading = false
-
-                                            // ✅ DIRECT HOME NAVIGATION (FIX)
-                                            navController.navigate(Screen.Home.route) {
-                                                popUpTo(Screen.Login.route) { inclusive = true }
+                                            if (!document.exists()) {
+                                                isLoading = false
+                                                errorMessage = "User data not found"
+                                                auth.signOut()
+                                                Log.d("LOGIN_DEBUG", "User document not found")
+                                                return@addOnSuccessListener
                                             }
 
-                                        }else {
+                                            val savedDeviceId = document.getString("deviceId")
+                                            Log.d("LOGIN_DEBUG", "Saved Device ID: $savedDeviceId")
 
-                                            Log.d("LOGIN_DEBUG", "Device mismatch → LOGIN BLOCKED")
+                                            // 🔥 CHANGE ONLY THIS BLOCK INSIDE SUCCESS
+
+                                            if (currentDeviceId == savedDeviceId) {
+
+                                                Log.d(
+                                                    "LOGIN_DEBUG",
+                                                    "Device matched → LOGIN SUCCESS"
+                                                )
+
+                                                val sessionManager = SessionManager(context)
+                                                sessionManager.saveLoginTime()
+
+                                                isLoading = false
+
+                                                // ✅ DIRECT HOME NAVIGATION (FIX)
+                                                navController.navigate(Screen.Home.route) {
+                                                    popUpTo(Screen.Login.route) { inclusive = true }
+                                                }
+
+                                            } else {
+
+                                                Log.d(
+                                                    "LOGIN_DEBUG",
+                                                    "Device mismatch → LOGIN BLOCKED"
+                                                )
+
+                                                isLoading = false
+                                                auth.signOut()
+                                                errorMessage =
+                                                    "Account already used on another device"
+                                            }
+                                        }
+                                        .addOnFailureListener {
+
+                                            Log.d("LOGIN_DEBUG", "Firestore error: ${it.message}")
 
                                             isLoading = false
-                                            auth.signOut()
-                                            errorMessage =
-                                                "Account already used on another device"
+                                            errorMessage = "Database error"
                                         }
-                                    }
-                                    .addOnFailureListener {
-
-                                        Log.d("LOGIN_DEBUG", "Firestore error: ${it.message}")
-
-                                        isLoading = false
-                                        errorMessage = "Database error"
-                                    }
+                                }
 
                             } else {
 
@@ -248,10 +268,6 @@ fun LoginScreen(navController: NavController) {
                     }
                 )
             }
-        }
-
-        if (isLoading) {
-            AuthLoadingScreen()
         }
     }
 }
