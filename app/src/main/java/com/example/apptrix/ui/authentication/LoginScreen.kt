@@ -1,6 +1,7 @@
 package com.example.apptrix.ui.authentication
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -40,7 +41,7 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) } // 🔥 NEW
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -93,6 +94,23 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // 🔥 NEW: Forgot Password
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Text(
+                    "Forgot Password?",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.clickable {
+                        navController.navigate(Screen.ForgotPassword.route)
+                    }
+                )
+            }
+
             Spacer(Modifier.height(16.dp))
 
             ErrorText(errorMessage)
@@ -111,14 +129,25 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
-                    isLoading = true // 🔥 START loading
+                    isLoading = true
 
-                    auth.signInWithEmailAndPassword(email, password)
+                    Log.d("LOGIN_DEBUG", "Login button clicked")
+                    Log.d("LOGIN_DEBUG", "Email: $email")
+
+                    // 🔥 clear old session
+                    auth.signOut()
+                    Log.d("LOGIN_DEBUG", "Signed out previous session")
+
+                    auth.signInWithEmailAndPassword(email.trim(), password.trim())
                         .addOnCompleteListener { task ->
+
+                            Log.d("LOGIN_DEBUG", "Task success: ${task.isSuccessful}")
+                            Log.d("LOGIN_DEBUG", "Exception: ${task.exception?.message}")
 
                             if (task.isSuccessful) {
 
                                 val uid = auth.currentUser?.uid
+                                Log.d("LOGIN_DEBUG", "UID: $uid")
 
                                 if (uid == null) {
                                     isLoading = false
@@ -127,6 +156,7 @@ fun LoginScreen(navController: NavController) {
                                 }
 
                                 val currentDeviceId = DeviceService.getDeviceId(context)
+                                Log.d("LOGIN_DEBUG", "Current Device ID: $currentDeviceId")
 
                                 FirebaseFirestore.getInstance()
                                     .collection("users")
@@ -134,27 +164,39 @@ fun LoginScreen(navController: NavController) {
                                     .get()
                                     .addOnSuccessListener { document ->
 
+                                        Log.d("LOGIN_DEBUG", "Firestore success")
+
                                         if (!document.exists()) {
                                             isLoading = false
                                             errorMessage = "User data not found"
                                             auth.signOut()
+                                            Log.d("LOGIN_DEBUG", "User document not found")
                                             return@addOnSuccessListener
                                         }
 
                                         val savedDeviceId = document.getString("deviceId")
+                                        Log.d("LOGIN_DEBUG", "Saved Device ID: $savedDeviceId")
+
+                                        // 🔥 CHANGE ONLY THIS BLOCK INSIDE SUCCESS
 
                                         if (currentDeviceId == savedDeviceId) {
+
+                                            Log.d("LOGIN_DEBUG", "Device matched → LOGIN SUCCESS")
 
                                             val sessionManager = SessionManager(context)
                                             sessionManager.saveLoginTime()
 
-                                            isLoading = false // 🔥 STOP loading
+                                            isLoading = false
 
-                                            navController.navigate(Screen.AuthLoading.route) {
+                                            // ✅ DIRECT HOME NAVIGATION (FIX)
+                                            navController.navigate(Screen.Home.route) {
                                                 popUpTo(Screen.Login.route) { inclusive = true }
                                             }
 
-                                        } else {
+                                        }else {
+
+                                            Log.d("LOGIN_DEBUG", "Device mismatch → LOGIN BLOCKED")
+
                                             isLoading = false
                                             auth.signOut()
                                             errorMessage =
@@ -162,14 +204,21 @@ fun LoginScreen(navController: NavController) {
                                         }
                                     }
                                     .addOnFailureListener {
+
+                                        Log.d("LOGIN_DEBUG", "Firestore error: ${it.message}")
+
                                         isLoading = false
                                         errorMessage = "Database error"
                                     }
 
                             } else {
+
+                                Log.d("LOGIN_DEBUG", "LOGIN FAILED")
+
                                 isLoading = false
+                                auth.signOut() // 🔥 force clear
                                 errorMessage =
-                                    task.exception?.message ?: "Login failed"
+                                    task.exception?.message ?: "Invalid email or password"
                             }
                         }
                 },
@@ -201,9 +250,8 @@ fun LoginScreen(navController: NavController) {
             }
         }
 
-        // 🔥 LOADING OVERLAY
         if (isLoading) {
-            AuthLoadingScreen(navController)
+            AuthLoadingScreen()
         }
     }
 }
