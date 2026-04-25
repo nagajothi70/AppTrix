@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -18,6 +19,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.*
+import kotlinx.coroutines.delay
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -32,20 +35,37 @@ fun OtpScreen(navController: NavController, phone: String) {
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    val keyboardController = LocalSoftwareKeyboardController.current
 
-    var otp by remember { mutableStateOf("") }
+    var otp by rememberSaveable { mutableStateOf("") }
     var verificationId by remember { mutableStateOf<String?>(null) }
+    var resendToken by remember { mutableStateOf<PhoneAuthProvider.ForceResendingToken?>(null) }
+
     var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf("") }
 
     val focusRequester = remember { FocusRequester() }
 
-    // 🔥 SEND OTP
-    LaunchedEffect(Unit) {
+    // 🔥 TIMER STATE
+    var timer by remember { mutableIntStateOf(60) }
+    var canResend by remember { mutableStateOf(false) }
 
-        focusRequester.requestFocus()
+    // 🔥 TIMER LOGIC
+    LaunchedEffect(timer) {
+        if (timer > 0) {
+            delay(1000)
+            timer--
+        } else {
+            canResend = true
+        }
+    }
 
-        val options = PhoneAuthOptions.newBuilder(auth)
+    // 🔥 SEND OTP (FIRST TIME)
+    fun sendOtp(isResend: Boolean = false) {
+
+        message = ""
+
+        val optionsBuilder = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber("+91$phone")
             .setTimeout(60L, TimeUnit.SECONDS)
             .setActivity(context as Activity)
@@ -54,7 +74,7 @@ fun OtpScreen(navController: NavController, phone: String) {
                 override fun onVerificationCompleted(credential: PhoneAuthCredential) {}
 
                 override fun onVerificationFailed(e: FirebaseException) {
-                    errorMessage = e.message
+                    message = e.message ?: "OTP failed ❌"
                 }
 
                 override fun onCodeSent(
@@ -62,14 +82,29 @@ fun OtpScreen(navController: NavController, phone: String) {
                     token: PhoneAuthProvider.ForceResendingToken
                 ) {
                     verificationId = verId
+                    resendToken = token
+
+                    message = if (isResend)
+                        "OTP resent successfully ✔"
+                    else
+                        "OTP sent successfully ✔"
                 }
             })
-            .build()
 
-        PhoneAuthProvider.verifyPhoneNumber(options)
+        // 🔥 RESEND TOKEN USE
+        if (isResend && resendToken != null) {
+            optionsBuilder.setForceResendingToken(resendToken!!)
+        }
+
+        PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
     }
 
-    // 🎨 UI
+    // 🔥 FIRST LOAD
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        sendOtp(false)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -80,17 +115,13 @@ fun OtpScreen(navController: NavController, phone: String) {
             )
             .padding(24.dp)
     ) {
-        Spacer(modifier = Modifier.height(10.dp))
-        // 🔙 Back Button
+
+        // 🔙 BACK
         IconButton(
             onClick = { navController.popBackStack() },
             modifier = Modifier.align(Alignment.TopStart)
         ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.White
-            )
+            Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
         }
 
         Column(
@@ -99,7 +130,7 @@ fun OtpScreen(navController: NavController, phone: String) {
         ) {
 
             Text(
-                text = "Enter OTP",
+                "Enter OTP",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -108,18 +139,18 @@ fun OtpScreen(navController: NavController, phone: String) {
             Spacer(Modifier.height(10.dp))
 
             Text(
-                text = "Sent to +91 $phone",
-                color = Color.LightGray,
-                fontSize = 14.sp
+                "Sent to +91 $phone",
+                color = Color.LightGray
             )
 
             Spacer(Modifier.height(30.dp))
 
-            // 🔥 OTP BOXES
+            // 🔥 OTP BOXES (CLICK = KEYBOARD OPEN)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.clickable {
                     focusRequester.requestFocus()
+                    keyboardController?.show() // 🔥 FIX
                 }
             ) {
                 repeat(6) { index ->
@@ -131,33 +162,28 @@ fun OtpScreen(navController: NavController, phone: String) {
                             .background(Color.White, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = char,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(char, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // ❌ ERROR MESSAGE (instead of Toast)
-            if (errorMessage != null) {
+            // 🔥 MESSAGE (SUCCESS / ERROR)
+            if (message.isNotEmpty()) {
                 Text(
-                    text = errorMessage!!,
-                    color = Color.Red,
-                    fontSize = 14.sp
+                    message,
+                    color = if (message.contains("✔")) Color.Green else Color.Red
                 )
             }
 
-            // 🔥 Hidden input
+            // 🔥 HIDDEN INPUT
             TextField(
                 value = otp,
                 onValueChange = {
                     if (it.length <= 6) {
                         otp = it
-                        errorMessage = null // clear error while typing
+                        message = ""
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -173,11 +199,12 @@ fun OtpScreen(navController: NavController, phone: String) {
 
             Spacer(Modifier.height(30.dp))
 
+            // 🔥 VERIFY BUTTON
             Button(
                 onClick = {
 
                     if (otp.length < 6) {
-                        errorMessage = "Enter valid OTP"
+                        message = "Enter valid OTP"
                         return@Button
                     }
 
@@ -186,7 +213,6 @@ fun OtpScreen(navController: NavController, phone: String) {
                     val credential = PhoneAuthProvider.getCredential(verId, otp)
 
                     isLoading = true
-                    errorMessage = null
 
                     auth.signInWithCredential(credential)
                         .addOnCompleteListener { task ->
@@ -202,20 +228,19 @@ fun OtpScreen(navController: NavController, phone: String) {
                                 navController.previousBackStackEntry
                                     ?.savedStateHandle
                                     ?.set("verified_phone", phone)
+
                                 navController.popBackStack()
 
                             } else {
-                                errorMessage = "Invalid OTP"
+                                message = "Invalid OTP ❌"
                             }
                         }
                 },
+                enabled = otp.length == 6 && !isLoading, // 🔥 FIX
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
-
                 if (isLoading) {
                     CircularProgressIndicator(
                         color = Color.White,
@@ -226,6 +251,22 @@ fun OtpScreen(navController: NavController, phone: String) {
                     Text("Verify OTP", color = Color.White)
                 }
             }
+
+            Spacer(Modifier.height(16.dp))
+
+            // 🔥 RESEND
+            Text(
+                if (canResend) "Resend OTP" else "Resend in ${timer}s",
+                color = if (canResend) Color.White else Color.Gray,
+                modifier = Modifier.clickable(enabled = canResend) {
+
+                    if (canResend) {
+                        timer = 60
+                        canResend = false
+                        sendOtp(true)
+                    }
+                }
+            )
         }
     }
 }
