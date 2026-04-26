@@ -34,7 +34,6 @@ fun BiometricScreen(navController: NavController) {
         return
     }
 
-    // 🔐 Biometric function
     fun showBiometricPrompt() {
 
         val executor = ContextCompat.getMainExecutor(context)
@@ -72,12 +71,10 @@ fun BiometricScreen(navController: NavController) {
         biometricPrompt.authenticate(promptInfo)
     }
 
-    // 👉 First time auto trigger
     LaunchedEffect(Unit) {
         showBiometricPrompt()
     }
 
-    // 🎨 UI
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -87,7 +84,7 @@ fun BiometricScreen(navController: NavController) {
                 )
             )
     ) {
-        // 🔥 MAIN CARD
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -166,7 +163,6 @@ fun BiometricScreen(navController: NavController) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // 👇 OPTIONAL TEXT BUTTON (extra UX)
                     TextButton(
                         onClick = {
                             navController.navigate(Screen.Login.route) {

@@ -94,7 +94,6 @@ fun LoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 🔥 NEW: Forgot Password
             Spacer(Modifier.height(8.dp))
 
             Row(
@@ -129,14 +128,11 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
-
-
                     isLoading = true
 
                     Log.d("LOGIN_DEBUG", "Login button clicked")
                     Log.d("LOGIN_DEBUG", "Email: $email")
 
-                    // 🔥 clear old session
                     auth.signOut()
                     Log.d("LOGIN_DEBUG", "Signed out previous session")
 
@@ -204,7 +200,6 @@ fun LoginScreen(navController: NavController) {
 
                                                 isLoading = false
 
-                                                // ✅ DIRECT HOME NAVIGATION (FIX)
                                                 navController.navigate(Screen.Home.route) {
                                                     popUpTo(Screen.Login.route) { inclusive = true }
                                                 }
@@ -236,7 +231,7 @@ fun LoginScreen(navController: NavController) {
                                 Log.d("LOGIN_DEBUG", "LOGIN FAILED")
 
                                 isLoading = false
-                                auth.signOut() // 🔥 force clear
+                                auth.signOut()
                                 errorMessage =
                                     task.exception?.message ?: "Invalid email or password"
                             }

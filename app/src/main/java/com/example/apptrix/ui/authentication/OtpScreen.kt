@@ -46,11 +46,9 @@ fun OtpScreen(navController: NavController, phone: String) {
 
     val focusRequester = remember { FocusRequester() }
 
-    // 🔥 TIMER STATE
     var timer by remember { mutableIntStateOf(60) }
     var canResend by remember { mutableStateOf(false) }
 
-    // 🔥 TIMER LOGIC
     LaunchedEffect(timer) {
         if (timer > 0) {
             delay(1000)
@@ -60,7 +58,6 @@ fun OtpScreen(navController: NavController, phone: String) {
         }
     }
 
-    // 🔥 SEND OTP (FIRST TIME)
     fun sendOtp(isResend: Boolean = false) {
 
         message = ""
@@ -91,7 +88,6 @@ fun OtpScreen(navController: NavController, phone: String) {
                 }
             })
 
-        // 🔥 RESEND TOKEN USE
         if (isResend && resendToken != null) {
             optionsBuilder.setForceResendingToken(resendToken!!)
         }
@@ -99,7 +95,6 @@ fun OtpScreen(navController: NavController, phone: String) {
         PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
     }
 
-    // 🔥 FIRST LOAD
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         sendOtp(false)
@@ -116,7 +111,6 @@ fun OtpScreen(navController: NavController, phone: String) {
             .padding(24.dp)
     ) {
 
-        // 🔙 BACK
         IconButton(
             onClick = { navController.popBackStack() },
             modifier = Modifier.align(Alignment.TopStart)
@@ -145,7 +139,6 @@ fun OtpScreen(navController: NavController, phone: String) {
 
             Spacer(Modifier.height(30.dp))
 
-            // 🔥 OTP BOXES (CLICK = KEYBOARD OPEN)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.clickable {
@@ -169,7 +162,6 @@ fun OtpScreen(navController: NavController, phone: String) {
 
             Spacer(Modifier.height(12.dp))
 
-            // 🔥 MESSAGE (SUCCESS / ERROR)
             if (message.isNotEmpty()) {
                 Text(
                     message,
@@ -177,7 +169,6 @@ fun OtpScreen(navController: NavController, phone: String) {
                 )
             }
 
-            // 🔥 HIDDEN INPUT
             TextField(
                 value = otp,
                 onValueChange = {
@@ -199,7 +190,6 @@ fun OtpScreen(navController: NavController, phone: String) {
 
             Spacer(Modifier.height(30.dp))
 
-            // 🔥 VERIFY BUTTON
             Button(
                 onClick = {
 
@@ -236,7 +226,7 @@ fun OtpScreen(navController: NavController, phone: String) {
                             }
                         }
                 },
-                enabled = otp.length == 6 && !isLoading, // 🔥 FIX
+                enabled = otp.length == 6 && !isLoading,
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
@@ -254,7 +244,6 @@ fun OtpScreen(navController: NavController, phone: String) {
 
             Spacer(Modifier.height(16.dp))
 
-            // 🔥 RESEND
             Text(
                 if (canResend) "Resend OTP" else "Resend in ${timer}s",
                 color = if (canResend) Color.White else Color.Gray,

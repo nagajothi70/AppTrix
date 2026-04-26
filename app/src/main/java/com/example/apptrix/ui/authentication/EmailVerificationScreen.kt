@@ -32,17 +32,14 @@ fun EmailVerificationScreen(
     var message by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
 
-    // 🔥 TIMER STATES
     var canResend by remember { mutableStateOf(false) }
     var timer by remember { mutableIntStateOf(90) }
 
-    // 🔥 IMPORTANT: trigger for restarting timer
-    var restartTimer by remember { mutableStateOf(0) }
+    var restartTimer by remember { mutableIntStateOf(0) }
 
-    // 🔥 FIXED TIMER LOGIC
     LaunchedEffect(restartTimer) {
         canResend = false
-        timer = 90   // 👉 change to 300 if you want 5 min
+        timer = 90
 
         while (timer > 0) {
             delay(1000)
@@ -69,7 +66,6 @@ fun EmailVerificationScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
 
-            // 🔥 EMAIL LOGO
             Image(
                 painter = painterResource(id = R.drawable.email),
                 contentDescription = "Email",
@@ -105,7 +101,6 @@ fun EmailVerificationScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 🔥 MESSAGE
             if (message.isNotEmpty()) {
                 Text(
                     text = message,
@@ -115,7 +110,6 @@ fun EmailVerificationScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // 🔥 RESEND BUTTON
             Button(
                 onClick = {
 
@@ -138,7 +132,6 @@ fun EmailVerificationScreen(
                                 if (task.isSuccessful) {
                                     message = "Verification email sent ✔"
 
-                                    // 🔥 restart timer properly
                                     restartTimer++
                                 } else {
                                     message =
@@ -171,7 +164,6 @@ fun EmailVerificationScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 🔥 GO TO LOGIN
             Button(
                 onClick = {
                     navController.navigate(Screen.Login.route) {

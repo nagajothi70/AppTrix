@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.models.sealed.Screen
-import com.example.security.SessionManager
 import com.example.service.DeviceService
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -221,8 +220,6 @@ fun SignupScreen(navController: NavController) {
                                             .addOnCompleteListener { verifyTask ->
 
                                                 if (verifyTask.isSuccessful) {
-
-                                                    // ❌ REMOVE signOut()
 
                                                     navController.navigate("${Screen.EmailVerify.route}/$email") {
                                                         popUpTo(Screen.Signup.route) { inclusive = true }

@@ -53,6 +53,4 @@ class AuthViewModel () : ViewModel() {
 
         return ""
     }
-
-
 }
