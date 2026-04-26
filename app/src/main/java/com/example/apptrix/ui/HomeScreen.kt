@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.sp
 fun HomeScreen() {
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text("Home Screen 🚀", fontSize = 22.sp)
     }
