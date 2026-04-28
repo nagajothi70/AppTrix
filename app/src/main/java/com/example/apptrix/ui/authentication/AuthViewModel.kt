@@ -2,9 +2,14 @@ package com.example.apptrix.ui.authentication
 
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
+import com.example.service.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class AuthViewModel () : ViewModel() {
-
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val repo: AuthRepository
+) : ViewModel() {
     fun isValidEmail(email: String): Boolean {
         return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }

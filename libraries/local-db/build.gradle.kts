@@ -5,13 +5,10 @@ plugins {
 
 android {
     namespace = "com.example.localdb"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 34   // 🔥 36 avoid pannu (stable illa)
 
     defaultConfig {
         minSdk = 24
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -25,19 +22,25 @@ android {
             )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"   // ✅ only once
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+
+    // ⚠️ Library module ku appcompat/material usually thevai illa
+    // but vechikalam if UI irundha
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

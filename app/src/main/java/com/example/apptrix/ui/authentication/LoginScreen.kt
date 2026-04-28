@@ -25,15 +25,17 @@ import com.example.models.sealed.Screen
 import com.example.security.SessionManager
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.service.DeviceService
 import com.google.firebase.firestore.FirebaseFirestore
 
 @SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = hiltViewModel()) {
 
-    val viewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
 
@@ -41,7 +43,6 @@ fun LoginScreen(navController: NavController) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -128,8 +129,6 @@ fun LoginScreen(navController: NavController) {
                         return@Button
                     }
 
-                    isLoading = true
-
                     Log.d("LOGIN_DEBUG", "Login button clicked")
                     Log.d("LOGIN_DEBUG", "Email: $email")
 
@@ -150,7 +149,6 @@ fun LoginScreen(navController: NavController) {
 
                                     if (user == null || !user.isEmailVerified){
                                         auth.signOut()
-                                        isLoading = false
                                         errorMessage = "Please verify your email first"
                                         return@addOnCompleteListener
                                     }
@@ -159,7 +157,6 @@ fun LoginScreen(navController: NavController) {
                                     Log.d("LOGIN_DEBUG", "UID: $uid")
 
                                     if (uid == null) {
-                                        isLoading = false
                                         errorMessage = "User error"
                                         return@addOnCompleteListener
                                     }
@@ -176,7 +173,6 @@ fun LoginScreen(navController: NavController) {
                                             Log.d("LOGIN_DEBUG", "Firestore success")
 
                                             if (!document.exists()) {
-                                                isLoading = false
                                                 errorMessage = "User data not found"
                                                 auth.signOut()
                                                 Log.d("LOGIN_DEBUG", "User document not found")
@@ -198,8 +194,6 @@ fun LoginScreen(navController: NavController) {
                                                 val sessionManager = SessionManager(context)
                                                 sessionManager.saveLoginTime()
 
-                                                isLoading = false
-
                                                 navController.navigate(Screen.Home.route) {
                                                     popUpTo(Screen.Login.route) { inclusive = true }
                                                 }
@@ -211,7 +205,6 @@ fun LoginScreen(navController: NavController) {
                                                     "Device mismatch → LOGIN BLOCKED"
                                                 )
 
-                                                isLoading = false
                                                 auth.signOut()
                                                 errorMessage =
                                                     "Account already used on another device"
@@ -221,7 +214,6 @@ fun LoginScreen(navController: NavController) {
 
                                             Log.d("LOGIN_DEBUG", "Firestore error: ${it.message}")
 
-                                            isLoading = false
                                             errorMessage = "Database error"
                                         }
                                 }
@@ -230,7 +222,6 @@ fun LoginScreen(navController: NavController) {
 
                                 Log.d("LOGIN_DEBUG", "LOGIN FAILED")
 
-                                isLoading = false
                                 auth.signOut()
                                 errorMessage =
                                     task.exception?.message ?: "Invalid email or password"
