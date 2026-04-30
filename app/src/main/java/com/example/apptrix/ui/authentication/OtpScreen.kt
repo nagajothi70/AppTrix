@@ -1,7 +1,6 @@
 package com.example.apptrix.ui.authentication
 
 import android.app.Activity
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -49,13 +48,6 @@ fun OtpScreen(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         viewModel.sendOtp(phone, activity)
-    }
-
-    // 🔥 Handle message
-    LaunchedEffect(state.message) {
-        if (state.message.isNotEmpty()) {
-            Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
-        }
     }
 
     // 🔥 Handle success
@@ -132,6 +124,24 @@ fun OtpScreen(
                         Text(char, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // ✅ INLINE MESSAGE (SAFE + NO CRASH)
+            if (state.message.isNotEmpty()) {
+
+                val messageLower = state.message.lowercase()
+
+                val messageColor =
+                    if (messageLower.contains("invalid")) Color.Red
+                    else Color(0xFF2ECC71)
+
+                Text(
+                    text = state.message,
+                    color = messageColor,
+                    fontSize = 13.sp
+                )
             }
 
             Spacer(Modifier.height(12.dp))
