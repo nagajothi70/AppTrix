@@ -1,9 +1,16 @@
 package com.example.service
 
+import android.app.Activity
 import android.util.Patterns
+import com.example.models.sealed.OtpResult
 import com.example.service.repository.AuthInterface
+import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class AuthService @Inject constructor(
@@ -11,6 +18,61 @@ class AuthService @Inject constructor(
 ) : AuthInterface {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+
+    override fun sendOtp(
+        phone: String,
+        activity: Activity,
+        resendToken: PhoneAuthProvider.ForceResendingToken?,
+        isResend: Boolean,
+        onResult: (OtpResult) -> Unit
+    ) {
+        val auth = FirebaseAuth.getInstance()
+
+        val builder = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber("+91$phone")
+            .setTimeout(60L, TimeUnit.SECONDS)
+            .setActivity(activity)
+            .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+                override fun onVerificationCompleted(credential: PhoneAuthCredential) {}
+
+                override fun onVerificationFailed(e: FirebaseException) {
+                    onResult(OtpResult.Error(e.message ?: "OTP failed"))
+                }
+
+                override fun onCodeSent(
+                    verId: String,
+                    token: PhoneAuthProvider.ForceResendingToken
+                ) {
+                    onResult(OtpResult.CodeSent(verId, token))
+                }
+            })
+
+        if (isResend && resendToken != null) {
+            builder.setForceResendingToken(resendToken)
+        }
+
+        PhoneAuthProvider.verifyPhoneNumber(builder.build())
+    }
+
+    override fun verifyOtp(
+        verificationId: String,
+        otp: String,
+        onResult: (Result<Unit>) -> Unit
+    ) {
+        val auth = FirebaseAuth.getInstance()
+
+        val credential = PhoneAuthProvider.getCredential(verificationId, otp)
+
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    onResult(Result.success(Unit))
+                } else {
+                    onResult(Result.failure(Exception("Invalid OTP")))
+                }
+            }
+    }
 
     override fun login(
         email: String,
@@ -163,6 +225,60 @@ class AuthService @Inject constructor(
             return "Password must contain 1 special character"
 
         return ""
+    }
+
+    override fun signup(
+        username: String,
+        email: String,
+        phone: String,
+        password: String,
+        deviceId: String,
+        onResult: (Result<Unit>) -> Unit
+    ) {
+
+        val auth = FirebaseAuth.getInstance()
+        val db = FirebaseFirestore.getInstance()
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+
+                if (!task.isSuccessful) {
+                    onResult(Result.failure(task.exception ?: Exception("Signup failed")))
+                    return@addOnCompleteListener
+                }
+
+                val user = auth.currentUser ?: return@addOnCompleteListener
+                val uid = user.uid
+
+                val userMap = hashMapOf(
+                    "email" to email,
+                    "phone" to phone,
+                    "deviceId" to deviceId
+                )
+
+                db.collection("users")
+                    .document(uid)
+                    .set(userMap)
+                    .addOnSuccessListener {
+
+                        user.sendEmailVerification()
+                            .addOnCompleteListener { verifyTask ->
+
+                                if (verifyTask.isSuccessful) {
+                                    onResult(Result.success(Unit))
+                                } else {
+                                    onResult(
+                                        Result.failure(
+                                            Exception("Failed to send verification email")
+                                        )
+                                    )
+                                }
+                            }
+                    }
+                    .addOnFailureListener {
+                        onResult(Result.failure(Exception("Database error")))
+                    }
+            }
     }
 
 }

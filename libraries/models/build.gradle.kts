@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.localdb"
-    compileSdk = 34   // 🔥 36 avoid pannu (stable illa)
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 24
@@ -29,19 +29,19 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "17"   // ✅ only once
+        jvmTarget = "17"
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
 
-    // ⚠️ Library module ku appcompat/material usually thevai illa
-    // but vechikalam if UI irundha
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation("com.google.firebase:firebase-auth:22.3.0")
+
 }
