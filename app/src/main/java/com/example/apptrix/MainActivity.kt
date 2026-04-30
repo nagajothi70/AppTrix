@@ -15,9 +15,13 @@ class MainActivity : androidx.fragment.app.FragmentActivity(){
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
         )
+        val startDestination =
+            intent.getStringExtra("startDestination") ?: "login"
+
+        val email = intent.getStringExtra("email") ?: ""
         setContent {
             ApptrixTheme {
-                AppNav()
+                AppNav(startDestination, email)
             }
         }
     }
