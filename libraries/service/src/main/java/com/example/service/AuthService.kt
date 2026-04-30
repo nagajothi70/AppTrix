@@ -10,6 +10,24 @@ class AuthService @Inject constructor(
 ) : AuthInterface {
     private val auth = FirebaseAuth.getInstance()
 
+    override fun sendPasswordReset(
+        email: String,
+        onResult: (Result<String>) -> Unit
+    ) {
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(Result.success("Reset link sent to your email"))
+                } else {
+                    onResult(
+                        Result.failure(
+                            task.exception ?: Exception("Error")
+                        )
+                    )
+                }
+            }
+    }
+
     override fun resendVerification(
         onResult: (Result<String>) -> Unit
     ) {

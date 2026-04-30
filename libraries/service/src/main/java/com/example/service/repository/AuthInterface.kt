@@ -14,4 +14,9 @@ interface AuthInterface {
     fun resendVerification(
         onResult: (Result<String>) -> Unit
     )
+
+    fun sendPasswordReset(
+        email: String,
+        onResult: (Result<String>) -> Unit
+    )
 }

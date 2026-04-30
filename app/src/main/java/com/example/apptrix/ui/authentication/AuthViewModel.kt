@@ -3,6 +3,7 @@ package com.example.apptrix.ui.authentication
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.models.EmailVerificationState
+import com.example.models.sealed.ForgotPasswordState
 import com.example.service.repository.AuthInterface
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -20,10 +21,39 @@ class AuthViewModel @Inject constructor(
     private val _state = MutableStateFlow(EmailVerificationState())
     val state= _state.asStateFlow()
 
+    private val _forgotState = MutableStateFlow(ForgotPasswordState())
+    val forgotState = _forgotState.asStateFlow()
+
     init {
         startTimer()
     }
+    fun sendReset(email: String) {
 
+        if (email.isEmpty()) {
+            _forgotState.value = ForgotPasswordState(
+                message = "Enter email"
+            )
+            return
+        }
+
+        _forgotState.value = ForgotPasswordState(isLoading = true)
+
+        repo.sendPasswordReset(email) { result ->
+
+            result.onSuccess {
+                _forgotState.value = ForgotPasswordState(
+                    isSuccess = true,
+                    message = it
+                )
+            }
+
+            result.onFailure {
+                _forgotState.value = ForgotPasswordState(
+                    message = it.message ?: "Error"
+                )
+            }
+        }
+    }
     fun resendEmail() {
         _state.value = _state.value.copy(isSending = true)
 
