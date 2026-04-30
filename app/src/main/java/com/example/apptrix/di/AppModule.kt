@@ -1,9 +1,9 @@
 package com.example.apptrix.di
 
 import com.example.service.AuthService
-import com.example.service.BiometricRepositoryImpl
+import com.example.service.BiometricService
 import com.example.service.repository.AuthInterface
-import com.example.service.repository.BiometricRepository
+import com.example.service.repository.BiometricInterface
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -23,8 +23,8 @@ abstract class AppModule {
     companion object {
         @Provides
         @Singleton
-        fun provideBiometricRepository(): BiometricRepository {
-            return BiometricRepositoryImpl()
+        fun provideBiometricRepository(): BiometricInterface {
+            return BiometricService()
         }
     }
 }

@@ -4,9 +4,9 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.example.models.sealed.BiometricResult
-import com.example.service.repository.BiometricRepository
+import com.example.service.repository.BiometricInterface
 
-class BiometricRepositoryImpl : BiometricRepository {
+class BiometricService : BiometricInterface {
 
     override fun authenticate(
         activity: FragmentActivity,
