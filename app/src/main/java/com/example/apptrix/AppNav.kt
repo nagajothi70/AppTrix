@@ -10,7 +10,7 @@ import com.example.apptrix.ui.authentication.ForgotPasswordScreen
 import com.example.apptrix.ui.authentication.LoginScreen
 import com.example.apptrix.ui.authentication.OtpScreen
 import com.example.apptrix.ui.authentication.SignupScreen
-import com.example.models.sealed.Screen
+import com.example.models.ui.Screen
 
 @Composable
 fun AppNav(startDestination: String, email: String) {

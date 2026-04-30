@@ -2,8 +2,9 @@ package com.example.apptrix.ui.authentication
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.models.EmailVerificationState
-import com.example.models.sealed.ForgotPasswordState
+import com.example.models.ui.EmailVerificationState
+import com.example.models.ui.ForgotPasswordState
+import com.example.models.ui.LoginState
 import com.example.service.repository.AuthInterface
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -24,8 +25,36 @@ class AuthViewModel @Inject constructor(
     private val _forgotState = MutableStateFlow(ForgotPasswordState())
     val forgotState = _forgotState.asStateFlow()
 
+    private val _loginState = MutableStateFlow(LoginState())
+    val loginState = _loginState.asStateFlow()
+
     init {
         startTimer()
+    }
+
+    fun login(email: String, password: String, deviceId: String) {
+
+        val validation = validateLogin(email, password)
+
+        if (validation.isNotEmpty()) {
+            _loginState.value = LoginState(error = validation)
+            return
+        }
+
+        _loginState.value = LoginState(isLoading = true)
+
+        repo.login(email, password, deviceId) { result ->
+
+            result.onSuccess {
+                _loginState.value = LoginState(isSuccess = true)
+            }
+
+            result.onFailure {
+                _loginState.value = LoginState(
+                    error = it.message ?: "Error"
+                )
+            }
+        }
     }
     fun sendReset(email: String) {
 

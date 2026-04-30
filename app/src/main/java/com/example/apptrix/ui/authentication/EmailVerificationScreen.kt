@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.models.sealed.Screen
+import com.example.models.ui.Screen
 import com.example.apptrix.R
 
 @Composable

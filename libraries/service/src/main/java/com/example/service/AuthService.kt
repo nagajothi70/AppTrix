@@ -3,12 +3,74 @@ package com.example.service
 import android.util.Patterns
 import com.example.service.repository.AuthInterface
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 
 class AuthService @Inject constructor(
     private val firebaseService: FirebaseService
 ) : AuthInterface {
     private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
+
+    override fun login(
+        email: String,
+        password: String,
+        deviceId: String,
+        onResult: (Result<Unit>) -> Unit
+    ) {
+
+        auth.signOut()
+
+        auth.signInWithEmailAndPassword(email.trim(), password.trim())
+            .addOnCompleteListener { task ->
+
+                if (!task.isSuccessful) {
+                    onResult(Result.failure(task.exception ?: Exception("Login failed")))
+                    return@addOnCompleteListener
+                }
+
+                val user = auth.currentUser
+
+                user?.reload()?.addOnCompleteListener {
+
+                    if (user == null || !user.isEmailVerified) {
+                        auth.signOut()
+                        onResult(Result.failure(Exception("Please verify your email first")))
+                        return@addOnCompleteListener
+                    }
+
+                    val uid = user.uid
+
+                    db.collection("users")
+                        .document(uid)
+                        .get()
+                        .addOnSuccessListener { doc ->
+
+                            if (!doc.exists()) {
+                                auth.signOut()
+                                onResult(Result.failure(Exception("User data not found")))
+                                return@addOnSuccessListener
+                            }
+
+                            val savedDeviceId = doc.getString("deviceId")
+
+                            if (deviceId == savedDeviceId) {
+                                onResult(Result.success(Unit))
+                            } else {
+                                auth.signOut()
+                                onResult(
+                                    Result.failure(
+                                        Exception("Account already used on another device")
+                                    )
+                                )
+                            }
+                        }
+                        .addOnFailureListener {
+                            onResult(Result.failure(Exception("Database error")))
+                        }
+                }
+            }
+    }
 
     override fun sendPasswordReset(
         email: String,

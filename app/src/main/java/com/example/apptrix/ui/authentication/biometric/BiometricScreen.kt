@@ -22,7 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.apptrix.ui.authentication.biometric.BiometricViewModel
 import com.example.models.sealed.BiometricResult
-import com.example.models.sealed.Screen
+import com.example.models.ui.Screen
 
 @Composable
 fun BiometricScreen(

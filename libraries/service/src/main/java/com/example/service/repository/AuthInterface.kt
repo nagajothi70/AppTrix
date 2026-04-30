@@ -19,4 +19,11 @@ interface AuthInterface {
         email: String,
         onResult: (Result<String>) -> Unit
     )
+
+    fun login(
+        email: String,
+        password: String,
+        deviceId: String,
+        onResult: (Result<Unit>) -> Unit
+    )
 }

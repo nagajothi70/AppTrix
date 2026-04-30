@@ -1,4 +1,4 @@
-package com.example.models.sealed
+package com.example.models.ui
 
 data class ForgotPasswordState(
     val isLoading: Boolean = false,
