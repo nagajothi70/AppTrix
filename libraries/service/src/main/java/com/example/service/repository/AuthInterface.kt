@@ -11,5 +11,7 @@ interface AuthInterface {
         password: String
     ): String
 
-
+    fun resendVerification(
+        onResult: (Result<String>) -> Unit
+    )
 }

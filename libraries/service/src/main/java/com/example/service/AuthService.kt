@@ -2,11 +2,39 @@ package com.example.service
 
 import android.util.Patterns
 import com.example.service.repository.AuthInterface
+import com.google.firebase.auth.FirebaseAuth
 import javax.inject.Inject
 
 class AuthService @Inject constructor(
     private val firebaseService: FirebaseService
 ) : AuthInterface {
+    private val auth = FirebaseAuth.getInstance()
+
+    override fun resendVerification(
+        onResult: (Result<String>) -> Unit
+    ) {
+        val user = auth.currentUser
+
+        if (user == null) {
+            onResult(Result.failure(Exception("Session expired. Please signup again.")))
+            return
+        }
+
+        user.reload().addOnCompleteListener {
+            user.sendEmailVerification()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        onResult(Result.success("Verification email sent ✔"))
+                    } else {
+                        onResult(
+                            Result.failure(
+                                task.exception ?: Exception("Failed ❌")
+                            )
+                        )
+                    }
+                }
+        }
+    }
 
     fun isValidEmail(email: String): Boolean {
         return Patterns.EMAIL_ADDRESS.matcher(email).matches()

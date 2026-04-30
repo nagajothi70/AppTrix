@@ -15,39 +15,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.models.sealed.Screen
-import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.delay
 import com.example.apptrix.R
 
 @Composable
 fun EmailVerificationScreen(
     navController: NavController,
-    email: String
+    email: String,
+    viewModel: AuthViewModel = hiltViewModel()
 ) {
 
-    val auth = FirebaseAuth.getInstance()
-
-    var message by remember { mutableStateOf("") }
-    var isSending by remember { mutableStateOf(false) }
-
-    var canResend by remember { mutableStateOf(false) }
-    var timer by remember { mutableIntStateOf(90) }
-
-    var restartTimer by remember { mutableIntStateOf(0) }
-
-    LaunchedEffect(restartTimer) {
-        canResend = false
-        timer = 90
-
-        while (timer > 0) {
-            delay(1000)
-            timer--
-        }
-
-        canResend = true
-    }
+    val state by viewModel.state.collectAsState()
 
     Box(
         modifier = Modifier
@@ -101,9 +81,9 @@ fun EmailVerificationScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            if (message.isNotEmpty()) {
+            if (state.message.isNotEmpty()) {
                 Text(
-                    text = message,
+                    text = state.message,
                     color = Color.Yellow,
                     fontSize = 13.sp
                 )
@@ -111,51 +91,23 @@ fun EmailVerificationScreen(
             }
 
             Button(
-                onClick = {
-
-                    val user = auth.currentUser
-
-                    if (user == null) {
-                        message = "Session expired. Please signup again."
-                        return@Button
-                    }
-
-                    isSending = true
-
-                    user.reload().addOnCompleteListener {
-
-                        user.sendEmailVerification()
-                            .addOnCompleteListener { task ->
-
-                                isSending = false
-
-                                if (task.isSuccessful) {
-                                    message = "Verification email sent ✔"
-
-                                    restartTimer++
-                                } else {
-                                    message =
-                                        task.exception?.message ?: "Failed to resend ❌"
-                                }
-                            }
-                    }
-                },
-                enabled = canResend && !isSending,
+                onClick = { viewModel.resendEmail() },
+                enabled = state.canResend && !state.isSending,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
 
-                if (isSending) {
+                if (state.isSending) {
                     CircularProgressIndicator(
                         color = Color.White,
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp
                     )
                 } else {
-                    if (!canResend) {
-                        Text("Resend in ${timer}s")
+                    if (!state.canResend) {
+                        Text("Resend in ${state.timer}s")
                     } else {
                         Text("Resend Email")
                     }

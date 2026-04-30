@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.google.services)
     kotlin("kapt")
 }
 
@@ -40,6 +41,9 @@ dependencies {
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation("androidx.biometric:biometric:1.1.0")
-
+    // 🔥 FIREBASE
+    implementation("com.google.firebase:firebase-auth:22.3.0")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.11.1")
+    implementation("com.google.firebase:firebase-analytics:21.5.0")
     implementation(project(":libraries:models"))
 }
