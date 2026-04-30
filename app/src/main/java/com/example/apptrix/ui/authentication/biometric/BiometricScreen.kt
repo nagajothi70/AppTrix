@@ -1,7 +1,6 @@
 package com.example.apptrix.ui.authentication
 
 import android.widget.Toast
-import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,63 +17,54 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.apptrix.ui.authentication.biometric.BiometricViewModel
+import com.example.models.sealed.BiometricResult
 import com.example.models.sealed.Screen
 
 @Composable
-fun BiometricScreen(navController: NavController) {
-
+fun BiometricScreen(
+    navController: NavController,
+    viewModel: BiometricViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
+    val state by viewModel.state.collectAsState()
 
-    if (activity == null) {
-        Text("Biometric not supported")
-        return
-    }
-
-    fun showBiometricPrompt() {
-
-        val executor = ContextCompat.getMainExecutor(context)
-
-        val biometricPrompt = BiometricPrompt(
-            activity,
-            executor,
-            object : BiometricPrompt.AuthenticationCallback() {
-
-                override fun onAuthenticationSucceeded(
-                    result: BiometricPrompt.AuthenticationResult
-                ) {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Biometric.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-
-                override fun onAuthenticationFailed() {
-                    Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show()
-                }
-
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    Toast.makeText(context, errString, Toast.LENGTH_SHORT).show()
+    // 🔥 Handle result
+    LaunchedEffect(state) {
+        when (state) {
+            is BiometricResult.Success -> {
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(Screen.Biometric.route) { inclusive = true }
+                    launchSingleTop = true
                 }
             }
-        )
 
-        val promptInfo = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("AppTrix Login")
-            .setSubtitle("Use fingerprint to continue")
-            .setNegativeButtonText("Cancel")
-            .build()
+            is BiometricResult.Failed -> {
+                Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show()
+            }
 
-        biometricPrompt.authenticate(promptInfo)
+            is BiometricResult.Error -> {
+                Toast.makeText(
+                    context,
+                    (state as BiometricResult.Error).message,
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            else -> {}
+        }
     }
 
+    // 🔥 Auto trigger
     LaunchedEffect(Unit) {
-        showBiometricPrompt()
+        activity?.let { viewModel.authenticate(it) }
     }
 
+    // 🔥 YOUR ORIGINAL UI (UNCHANGED)
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -151,7 +141,9 @@ fun BiometricScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { showBiometricPrompt() },
+                        onClick = {
+                            activity?.let { viewModel.authenticate(it) }
+                        },
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()

@@ -39,4 +39,7 @@ dependencies {
 
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+    implementation("androidx.biometric:biometric:1.1.0")
+
+    implementation(project(":libraries:models"))
 }
