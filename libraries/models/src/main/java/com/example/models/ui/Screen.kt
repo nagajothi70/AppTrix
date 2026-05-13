@@ -1,4 +1,4 @@
-package com.example.models.sealed
+package com.example.models.ui
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")

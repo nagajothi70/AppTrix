@@ -6,23 +6,39 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun ForgotPasswordScreen(navController: NavController) {
+fun ForgotPasswordScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
 
-    val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
+    val state by viewModel.forgotState.collectAsState()
 
     var email by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+
+    // 🔥 Handle result
+    LaunchedEffect(state) {
+
+        state.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+
+        if (state.isSuccess) {
+            navController.popBackStack()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -53,50 +69,20 @@ fun ForgotPasswordScreen(navController: NavController) {
             Spacer(Modifier.height(20.dp))
 
             Button(
-                onClick = {
-
-                    if (email.isEmpty()) {
-                        Toast.makeText(context, "Enter email", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-
-                    isLoading = true
-
-                    auth.sendPasswordResetEmail(email)
-                        .addOnCompleteListener { task ->
-
-                            isLoading = false
-
-                            if (task.isSuccessful) {
-                                Toast.makeText(
-                                    context,
-                                    "Reset link sent to your email",
-                                    Toast.LENGTH_LONG
-                                ).show()
-
-                                navController.popBackStack() // back to login
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    task.exception?.message ?: "Error",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                },
+                onClick = { viewModel.sendReset(email) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
-                Text("Send Reset Link",color = Color.White)
+                Text("Send Reset Link", color = Color.White)
             }
         }
 
-        if (isLoading) {
+        if (state.isLoading) {
             CircularProgressIndicator(
-                modifier = Modifier.align(androidx.compose.ui.Alignment.Center)
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }

@@ -1,5 +1,6 @@
 package com.example.apptrix
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,21 +20,52 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
+@SuppressLint("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         actionBar?.hide()
+
         setContent {
             SplashScreen {
-                startActivity(Intent(this, MainActivity::class.java))
-                finish()
+                handleNavigation()
             }
         }
     }
-}
 
+    private fun handleNavigation() {
+
+        val user = FirebaseAuth.getInstance().currentUser
+
+        val intent = when {
+            user == null -> {
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("startDestination", "login")
+                }
+            }
+
+            !user.isEmailVerified -> {
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("startDestination", "email_verification")
+                    putExtra("email", user.email ?: "")
+                }
+            }
+
+            else -> {
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("startDestination", "biometric")
+                }
+            }
+        }
+
+        startActivity(intent)
+        finish()
+    }
+}
 @Composable
 fun SplashScreen(onFinish: () -> Unit) {
 

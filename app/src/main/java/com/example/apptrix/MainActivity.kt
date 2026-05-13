@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import com.example.apptrix.ui.theme.ApptrixTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : androidx.fragment.app.FragmentActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -13,9 +15,13 @@ class MainActivity : androidx.fragment.app.FragmentActivity(){
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
         )
+        val startDestination =
+            intent.getStringExtra("startDestination") ?: "login"
+
+        val email = intent.getStringExtra("email") ?: ""
         setContent {
             ApptrixTheme {
-                AppNav()
+                AppNav(startDestination, email)
             }
         }
     }

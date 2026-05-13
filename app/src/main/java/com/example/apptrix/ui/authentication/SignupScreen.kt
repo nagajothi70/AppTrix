@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -23,47 +24,45 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.models.sealed.Screen
+import com.example.models.ui.Screen
 import com.example.service.DeviceService
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+
 
 @SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignupScreen(navController: NavController) {
-
-    val viewModel: AuthViewModel = viewModel()
-    val auth = FirebaseAuth.getInstance()
+fun SignupScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
     val context = LocalContext.current
 
     var username by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
 
-    var isLoading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    val isPhoneVerified =
-        navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.getStateFlow("phone_verified", false)
-            ?.collectAsState()?.value ?: false
+    var phone by rememberSaveable { mutableStateOf("") }
 
-    val verifiedPhone =
-        navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.getStateFlow("verified_phone", "")
-            ?.collectAsState()?.value ?: ""
+    val state by viewModel.signupState.collectAsState()
 
-    var phone by rememberSaveable { mutableStateOf(verifiedPhone) }
+    val deviceId = DeviceService.getDeviceId(context)
 
-    LaunchedEffect(verifiedPhone) {
-        if (verifiedPhone.isNotEmpty()) {
-            phone = verifiedPhone
+    // 🔥 HANDLE RESULT FROM VIEWMODEL
+    LaunchedEffect(state) {
+
+        state.error?.let {
+            errorMessage = it
+        }
+
+        if (state.isSuccess) {
+            navController.navigate("${Screen.EmailVerify.route}/$email") {
+                popUpTo(Screen.Signup.route) { inclusive = true }
+            }
         }
     }
 
@@ -101,41 +100,18 @@ fun SignupScreen(navController: NavController) {
 
             Spacer(Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-                TextField(
-                    value = phone,
-                    onValueChange = {
-                        phone = it
-                        errorMessage = ""
-                    },
-                    placeholder = { Text("Mobile Number") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    colors = appTextFieldColors(),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f)
-                )
-
-                Button(
-                    onClick = {
-                        if (phone.length < 10) {
-                            errorMessage = "Enter valid phone number"
-                            return@Button
-                        }
-                        navController.navigate("${Screen.Otp.route}/$phone")
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        if (isPhoneVerified) Color(0xFF2ECC71) else Color(0xFF4A90E2)
-                    )
-                ) {
-                    Text(if (isPhoneVerified) "Verified" else "Verify", color = Color.White)
-                }
-            }
+            TextField(
+                value = phone,
+                onValueChange = {
+                    phone = it
+                    errorMessage = ""
+                },
+                placeholder = { Text("Mobile Number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                colors = appTextFieldColors(),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(Modifier.height(16.dp))
 
@@ -175,8 +151,8 @@ fun SignupScreen(navController: NavController) {
 
                     errorMessage = ""
 
-                    if (!isPhoneVerified) {
-                        errorMessage = "Please verify your phone number"
+                    if (phone.length != 10) {
+                        errorMessage = "Enter valid phone number"
                         return@Button
                     }
 
@@ -189,99 +165,52 @@ fun SignupScreen(navController: NavController) {
                         return@Button
                     }
 
-                    isLoading = true
-
-                    auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener { task ->
-
-                            isLoading = false
-
-                            if (task.isSuccessful) {
-
-                                val user = auth.currentUser
-                                val uid = user?.uid ?: return@addOnCompleteListener
-
-                                val deviceId = DeviceService.getDeviceId(context)
-
-                                val userMap = hashMapOf(
-                                    "email" to email,
-                                    "phone" to phone,
-                                    "deviceId" to deviceId
-                                )
-
-                                FirebaseFirestore.getInstance()
-                                    .collection("users")
-                                    .document(uid)
-                                    .set(userMap)
-                                    .addOnSuccessListener {
-
-                                        // 🔥 Email verification
-                                        user.sendEmailVerification()
-                                            .addOnCompleteListener { verifyTask ->
-
-                                                if (verifyTask.isSuccessful) {
-
-                                                    navController.navigate("${Screen.EmailVerify.route}/$email") {
-                                                        popUpTo(Screen.Signup.route) { inclusive = true }
-                                                    }
-
-                                                } else {
-                                                    errorMessage = "Failed to send verification email"
-                                                }
-                                            }
-                                    }
-
-                            } else {
-                                errorMessage =
-                                    task.exception?.message ?: "Signup failed"
-                            }
-                        }
+                    // 🔥 ONLY THIS CHANGED (NO FIREBASE HERE)
+                    viewModel.signup(
+                        username,
+                        email,
+                        phone,
+                        password,
+                        deviceId
+                    )
                 },
-                enabled = !isLoading,
+                enabled = !state.isLoading,
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xFF4A90E2))
             ) {
-
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
                     Text("Sign Up", color = Color.White)
-
-                }
             }
 
-                Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "Already have an account? ",
-                        color = Color.LightGray
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Already have an account? ", color = Color.LightGray)
 
-                    Text(
-                        "Login",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(Screen.Signup.route) { inclusive = true }
-                            }
+                Text(
+                    "Login",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(Screen.Signup.route) { inclusive = true }
                         }
-                    )
-                }
+                    }
+                )
             }
         }
-    }
 
+        if (state.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+}
 @Composable
 fun appTextFieldColors() = TextFieldDefaults.colors(
     focusedContainerColor = Color.White,

@@ -1,7 +1,6 @@
 package com.example.apptrix.ui.authentication
 
-import android.annotation.SuppressLint
-import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,34 +13,50 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.models.sealed.Screen
+import com.example.models.ui.Screen
 import com.example.security.SessionManager
-import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.ui.platform.LocalContext
 import com.example.service.DeviceService
-import com.google.firebase.firestore.FirebaseFirestore
 
-@SuppressLint("ViewModelConstructorInComposable")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = hiltViewModel()
+) {
 
-    val viewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-    val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
+    val state by viewModel.loginState.collectAsState()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+
+    val deviceId = DeviceService.getDeviceId(context)
+
+    // 🔥 Handle result (SIDE EFFECT)
+    LaunchedEffect(state) {
+
+        state.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+        }
+
+        if (state.isSuccess) {
+            SessionManager(context).saveLoginTime()
+
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -110,132 +125,11 @@ fun LoginScreen(navController: NavController) {
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-
-            ErrorText(errorMessage)
-
             Spacer(Modifier.height(30.dp))
 
             Button(
                 onClick = {
-
-                    errorMessage = ""
-
-                    val validation = viewModel.validateLogin(email, password)
-
-                    if (validation.isNotEmpty()) {
-                        errorMessage = validation
-                        return@Button
-                    }
-
-                    isLoading = true
-
-                    Log.d("LOGIN_DEBUG", "Login button clicked")
-                    Log.d("LOGIN_DEBUG", "Email: $email")
-
-                    auth.signOut()
-                    Log.d("LOGIN_DEBUG", "Signed out previous session")
-
-                    auth.signInWithEmailAndPassword(email.trim(), password.trim())
-                        .addOnCompleteListener { task ->
-
-                            Log.d("LOGIN_DEBUG", "Task success: ${task.isSuccessful}")
-                            Log.d("LOGIN_DEBUG", "Exception: ${task.exception?.message}")
-
-                            if (task.isSuccessful) {
-
-                                val user = auth.currentUser
-
-                                user?.reload()?.addOnCompleteListener {
-
-                                    if (user == null || !user.isEmailVerified){
-                                        auth.signOut()
-                                        isLoading = false
-                                        errorMessage = "Please verify your email first"
-                                        return@addOnCompleteListener
-                                    }
-
-                                    val uid = auth.currentUser?.uid
-                                    Log.d("LOGIN_DEBUG", "UID: $uid")
-
-                                    if (uid == null) {
-                                        isLoading = false
-                                        errorMessage = "User error"
-                                        return@addOnCompleteListener
-                                    }
-
-                                    val currentDeviceId = DeviceService.getDeviceId(context)
-                                    Log.d("LOGIN_DEBUG", "Current Device ID: $currentDeviceId")
-
-                                    FirebaseFirestore.getInstance()
-                                        .collection("users")
-                                        .document(uid)
-                                        .get()
-                                        .addOnSuccessListener { document ->
-
-                                            Log.d("LOGIN_DEBUG", "Firestore success")
-
-                                            if (!document.exists()) {
-                                                isLoading = false
-                                                errorMessage = "User data not found"
-                                                auth.signOut()
-                                                Log.d("LOGIN_DEBUG", "User document not found")
-                                                return@addOnSuccessListener
-                                            }
-
-                                            val savedDeviceId = document.getString("deviceId")
-                                            Log.d("LOGIN_DEBUG", "Saved Device ID: $savedDeviceId")
-
-                                            // 🔥 CHANGE ONLY THIS BLOCK INSIDE SUCCESS
-
-                                            if (currentDeviceId == savedDeviceId) {
-
-                                                Log.d(
-                                                    "LOGIN_DEBUG",
-                                                    "Device matched → LOGIN SUCCESS"
-                                                )
-
-                                                val sessionManager = SessionManager(context)
-                                                sessionManager.saveLoginTime()
-
-                                                isLoading = false
-
-                                                navController.navigate(Screen.Home.route) {
-                                                    popUpTo(Screen.Login.route) { inclusive = true }
-                                                }
-
-                                            } else {
-
-                                                Log.d(
-                                                    "LOGIN_DEBUG",
-                                                    "Device mismatch → LOGIN BLOCKED"
-                                                )
-
-                                                isLoading = false
-                                                auth.signOut()
-                                                errorMessage =
-                                                    "Account already used on another device"
-                                            }
-                                        }
-                                        .addOnFailureListener {
-
-                                            Log.d("LOGIN_DEBUG", "Firestore error: ${it.message}")
-
-                                            isLoading = false
-                                            errorMessage = "Database error"
-                                        }
-                                }
-
-                            } else {
-
-                                Log.d("LOGIN_DEBUG", "LOGIN FAILED")
-
-                                isLoading = false
-                                auth.signOut()
-                                errorMessage =
-                                    task.exception?.message ?: "Invalid email or password"
-                            }
-                        }
+                    viewModel.login(email, password, deviceId)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -263,6 +157,13 @@ fun LoginScreen(navController: NavController) {
                     }
                 )
             }
+        }
+
+        // 🔥 Loading indicator
+        if (state.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(androidx.compose.ui.Alignment.Center)
+            )
         }
     }
 }

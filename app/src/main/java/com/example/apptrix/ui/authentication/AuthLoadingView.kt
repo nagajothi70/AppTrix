@@ -14,12 +14,6 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 
 @Composable
 fun AuthLoadingScreen() {
-
-    AuthLoadingView()
-}
-@Composable
-fun AuthLoadingView() {
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -27,16 +21,16 @@ fun AuthLoadingView() {
                 Brush.verticalGradient(
                     listOf(
                         ComposeColor(0xFF0D2A5C),
-                        ComposeColor(0xFF123E7C)
-                    )
-                )
+                        ComposeColor(0xFF123E7C),
+                    ),
+                ),
             ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
             color = ComposeColor.White,
             strokeWidth = 3.dp,
-            modifier = Modifier.size(36.dp)
+            modifier = Modifier.size(36.dp),
         )
     }
 }
