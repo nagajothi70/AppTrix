@@ -1,10 +1,7 @@
 package com.example.service
 
-import android.app.Activity
 import android.util.Patterns
-import com.example.models.sealed.OtpResult
 import com.example.service.repository.AuthInterface
-import com.google.firebase.auth.PhoneAuthProvider
 import javax.inject.Inject
 
 class AuthService @Inject constructor(
@@ -12,23 +9,7 @@ class AuthService @Inject constructor(
 ) : AuthInterface {
 
     // 🔥 OTP
-    override fun sendOtp(
-        phone: String,
-        activity: Activity,
-        resendToken: PhoneAuthProvider.ForceResendingToken?,
-        isResend: Boolean,
-        onResult: (OtpResult) -> Unit
-    ) {
-        firebaseService.sendOtp(phone, activity, resendToken, isResend, onResult)
-    }
 
-    override fun verifyOtp(
-        verificationId: String,
-        otp: String,
-        onResult: (Result<Unit>) -> Unit
-    ) {
-        firebaseService.verifyOtp(verificationId, otp, onResult)
-    }
 
     override fun resendVerification(
         onResult: (Result<String>) -> Unit

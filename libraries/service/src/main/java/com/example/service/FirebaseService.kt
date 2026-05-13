@@ -1,12 +1,8 @@
 package com.example.service
 
-import android.app.Activity
-import com.example.models.sealed.OtpResult
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import com.google.firebase.auth.FirebaseAuth
 
 class FirebaseService @Inject constructor() {
 
@@ -117,55 +113,5 @@ class FirebaseService @Inject constructor() {
                     }
                 }
         }
-    }
-
-    // 🔥 SEND OTP
-    fun sendOtp(
-        phone: String,
-        activity: Activity,
-        resendToken: PhoneAuthProvider.ForceResendingToken?,
-        isResend: Boolean,
-        onResult: (OtpResult) -> Unit
-    ) {
-        val builder = PhoneAuthOptions.newBuilder(auth)
-            .setPhoneNumber("+91$phone")
-            .setTimeout(60L, TimeUnit.SECONDS)
-            .setActivity(activity)
-            .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-
-                override fun onVerificationCompleted(credential: PhoneAuthCredential) {}
-
-                override fun onVerificationFailed(e: FirebaseException) {
-                    onResult(OtpResult.Error(e.message ?: "OTP failed"))
-                }
-
-                override fun onCodeSent(
-                    verId: String,
-                    token: PhoneAuthProvider.ForceResendingToken
-                ) {
-                    onResult(OtpResult.CodeSent(verId, token))
-                }
-            })
-
-        if (isResend && resendToken != null) {
-            builder.setForceResendingToken(resendToken)
-        }
-
-        PhoneAuthProvider.verifyPhoneNumber(builder.build())
-    }
-
-    // 🔥 VERIFY OTP
-    fun verifyOtp(
-        verificationId: String,
-        otp: String,
-        onResult: (Result<Unit>) -> Unit
-    ) {
-        val credential = PhoneAuthProvider.getCredential(verificationId, otp)
-
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener {
-                if (it.isSuccessful) onResult(Result.success(Unit))
-                else onResult(Result.failure(Exception("Invalid OTP")))
-            }
     }
 }

@@ -1,4 +1,4 @@
-package com.example.apptrix.ui.authentication
+package com.example.apptrix.ui.authentication.biometric
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.apptrix.ui.authentication.biometric.BiometricViewModel
 import com.example.models.sealed.BiometricResult
 import com.example.models.ui.Screen
 
@@ -42,19 +41,6 @@ fun BiometricScreen(
                     launchSingleTop = true
                 }
             }
-
-            is BiometricResult.Failed -> {
-                Toast.makeText(context, "Try again", Toast.LENGTH_SHORT).show()
-            }
-
-            is BiometricResult.Error -> {
-                Toast.makeText(
-                    context,
-                    (state as BiometricResult.Error).message,
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
             else -> {}
         }
     }

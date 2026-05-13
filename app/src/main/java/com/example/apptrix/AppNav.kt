@@ -4,11 +4,10 @@ import androidx.compose.runtime.*
 import androidx.navigation.compose.*
 import com.example.apptrix.ui.HomeScreen
 import com.example.apptrix.ui.authentication.AuthLoadingScreen
-import com.example.apptrix.ui.authentication.BiometricScreen
+import com.example.apptrix.ui.authentication.biometric.BiometricScreen
 import com.example.apptrix.ui.authentication.EmailVerificationScreen
 import com.example.apptrix.ui.authentication.ForgotPasswordScreen
 import com.example.apptrix.ui.authentication.LoginScreen
-import com.example.apptrix.ui.authentication.OtpScreen
 import com.example.apptrix.ui.authentication.SignupScreen
 import com.example.models.ui.Screen
 
@@ -47,11 +46,6 @@ fun AppNav(startDestination: String, email: String) {
 
         composable(Screen.AuthLoading.route) {
             AuthLoadingScreen()
-        }
-
-        composable("otp/{phone}") { backStackEntry ->
-            val phone = backStackEntry.arguments?.getString("phone") ?: ""
-            OtpScreen(navController, phone)
         }
 
         composable(Screen.ForgotPassword.route) {

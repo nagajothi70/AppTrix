@@ -46,27 +46,9 @@ fun SignupScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
+    var phone by rememberSaveable { mutableStateOf("") }
+
     val state by viewModel.signupState.collectAsState()
-
-    val isPhoneVerified =
-        navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.getStateFlow("phone_verified", false)
-            ?.collectAsState()?.value ?: false
-
-    val verifiedPhone =
-        navController.currentBackStackEntry
-            ?.savedStateHandle
-            ?.getStateFlow("verified_phone", "")
-            ?.collectAsState()?.value ?: ""
-
-    var phone by rememberSaveable { mutableStateOf(verifiedPhone) }
-
-    LaunchedEffect(verifiedPhone) {
-        if (verifiedPhone.isNotEmpty()) {
-            phone = verifiedPhone
-        }
-    }
 
     val deviceId = DeviceService.getDeviceId(context)
 
@@ -118,41 +100,18 @@ fun SignupScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-                TextField(
-                    value = phone,
-                    onValueChange = {
-                        phone = it
-                        errorMessage = ""
-                    },
-                    placeholder = { Text("Mobile Number") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    colors = appTextFieldColors(),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f)
-                )
-
-                Button(
-                    onClick = {
-                        if (phone.length < 10) {
-                            errorMessage = "Enter valid phone number"
-                            return@Button
-                        }
-                        navController.navigate("${Screen.Otp.route}/$phone")
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        if (isPhoneVerified) Color(0xFF2ECC71) else Color(0xFF4A90E2)
-                    )
-                ) {
-                    Text(if (isPhoneVerified) "Verified" else "Verify", color = Color.White)
-                }
-            }
+            TextField(
+                value = phone,
+                onValueChange = {
+                    phone = it
+                    errorMessage = ""
+                },
+                placeholder = { Text("Mobile Number") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                colors = appTextFieldColors(),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(Modifier.height(16.dp))
 
@@ -192,8 +151,8 @@ fun SignupScreen(
 
                     errorMessage = ""
 
-                    if (!isPhoneVerified) {
-                        errorMessage = "Please verify your phone number"
+                    if (phone.length != 10) {
+                        errorMessage = "Enter valid phone number"
                         return@Button
                     }
 
@@ -212,8 +171,7 @@ fun SignupScreen(
                         email,
                         phone,
                         password,
-                        deviceId,
-                        isPhoneVerified
+                        deviceId
                     )
                 },
                 enabled = !state.isLoading,

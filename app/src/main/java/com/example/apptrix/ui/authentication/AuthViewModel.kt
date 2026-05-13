@@ -1,13 +1,10 @@
 package com.example.apptrix.ui.authentication
 
-import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.models.sealed.OtpResult
 import com.example.models.ui.EmailVerificationState
 import com.example.models.ui.ForgotPasswordState
 import com.example.models.ui.LoginState
-import com.example.models.ui.OtpState
 import com.example.models.ui.SignupState
 import com.example.service.repository.AuthInterface
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,16 +22,10 @@ class AuthViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(EmailVerificationState())
     val state = _state.asStateFlow()
-
     private val _forgotState = MutableStateFlow(ForgotPasswordState())
     val forgotState = _forgotState.asStateFlow()
-
     private val _loginState = MutableStateFlow(LoginState())
     val loginState = _loginState.asStateFlow()
-
-    private val _otpState = MutableStateFlow(OtpState())
-    val otpState = _otpState.asStateFlow()
-
     private val _signupState = MutableStateFlow(SignupState())
     val signupState = _signupState.asStateFlow()
 
@@ -47,16 +38,8 @@ class AuthViewModel @Inject constructor(
         email: String,
         phone: String,
         password: String,
-        deviceId: String,
-        isPhoneVerified: Boolean
+        deviceId: String
     ) {
-
-        if (!isPhoneVerified) {
-            _signupState.value = SignupState(
-                error = "Please verify your phone number"
-            )
-            return
-        }
 
         val validation = validateSignup(username, email, phone, password)
 
@@ -78,73 +61,6 @@ class AuthViewModel @Inject constructor(
                     error = it.message ?: "Signup failed"
                 )
             }
-        }
-    }
-
-    fun sendOtp(phone: String, activity: Activity, isResend: Boolean = false) {
-
-        repo.sendOtp(
-            phone,
-            activity,
-            _otpState.value.resendToken,
-            isResend
-        ) { result ->
-
-            when (result) {
-                is OtpResult.CodeSent -> {
-                    _otpState.value = _otpState.value.copy(
-                        verificationId = result.verificationId,
-                        resendToken = result.token,
-                        message = if (isResend) "OTP resent ✔" else "OTP sent ✔"
-                    )
-                    startOtpTimer()
-                }
-
-                is OtpResult.Error -> {
-                    _otpState.value = _otpState.value.copy(
-                        message = result.message
-                    )
-                }
-            }
-        }
-    }
-
-    fun verifyOtp(otp: String) {
-
-        val verId = _otpState.value.verificationId ?: return
-
-        _otpState.value = _otpState.value.copy(isLoading = true)
-
-        repo.verifyOtp(verId, otp) { result ->
-
-            result.onSuccess {
-                _otpState.value = _otpState.value.copy(
-                    isLoading = false,
-                    isVerified = true
-                )
-            }
-
-            result.onFailure {
-                _otpState.value = _otpState.value.copy(
-                    isLoading = false,
-                    message = it.message ?: "Error"
-                )
-            }
-        }
-
-    }
-    private fun startOtpTimer() {
-        viewModelScope.launch {
-            var time = 60
-            _otpState.value = _otpState.value.copy(timer = time, canResend = false)
-
-            while (time > 0) {
-                delay(1000)
-                time--
-                _otpState.value = _otpState.value.copy(timer = time)
-            }
-
-            _otpState.value = _otpState.value.copy(canResend = true)
         }
     }
 

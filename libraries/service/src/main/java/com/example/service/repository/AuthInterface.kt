@@ -1,7 +1,6 @@
 package com.example.service.repository
 
 import android.app.Activity
-import com.example.models.sealed.OtpResult
 import com.google.firebase.auth.PhoneAuthProvider
 
 interface AuthInterface {
@@ -28,20 +27,6 @@ interface AuthInterface {
         email: String,
         password: String,
         deviceId: String,
-        onResult: (Result<Unit>) -> Unit
-    )
-
-    fun sendOtp(
-        phone: String,
-        activity: Activity,
-        resendToken: PhoneAuthProvider.ForceResendingToken?,
-        isResend: Boolean,
-        onResult: (OtpResult) -> Unit
-    )
-
-    fun verifyOtp(
-        verificationId: String,
-        otp: String,
         onResult: (Result<Unit>) -> Unit
     )
 
