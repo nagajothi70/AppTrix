@@ -1,5 +1,6 @@
 package com.example.apptrix.ui.authentication
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.models.ui.EmailVerificationState
@@ -34,6 +35,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun signup(
+        context: Context,
         username: String,
         email: String,
         phone: String,
@@ -50,7 +52,7 @@ class AuthViewModel @Inject constructor(
 
         _signupState.value = SignupState(isLoading = true)
 
-        repo.signup(username, email, phone, password, deviceId) { result ->
+        repo.signup(context,username, email, phone, password, deviceId) { result ->
 
             result.onSuccess {
                 _signupState.value = SignupState(isSuccess = true)

@@ -1,7 +1,6 @@
 package com.example.service.repository
 
-import android.app.Activity
-import com.google.firebase.auth.PhoneAuthProvider
+import android.content.Context
 
 interface AuthInterface {
 
@@ -31,6 +30,7 @@ interface AuthInterface {
     )
 
     fun signup(
+        context: Context,
         username: String,
         email: String,
         phone: String,

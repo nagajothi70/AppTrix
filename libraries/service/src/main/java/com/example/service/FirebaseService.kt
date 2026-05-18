@@ -1,13 +1,61 @@
 package com.example.service
 
+import android.content.Context
+import android.util.Log
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
 import com.google.firebase.firestore.FirebaseFirestore
 import javax.inject.Inject
 import com.google.firebase.auth.FirebaseAuth
+import org.json.JSONObject
 
 class FirebaseService @Inject constructor() {
 
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+
+
+    fun saveUserToBackend(
+        context: Context,
+        firebaseUID: String,
+        name: String,
+        email: String,
+        role: String
+    ) {
+
+        val url = "http://10.0.2.2:5000/save-user"
+
+        val queue = Volley.newRequestQueue(context)
+
+        val jsonObject = JSONObject()
+
+        jsonObject.put("firebaseUID", firebaseUID)
+        jsonObject.put("name", name)
+        jsonObject.put("email", email)
+        jsonObject.put("role", role)
+
+        val request = JsonObjectRequest(
+            Request.Method.POST,
+            url,
+            jsonObject,
+
+            { response ->
+
+                Log.d("BACKEND", "SUCCESS : ${response}")
+
+            },
+
+            { error ->
+
+                Log.e("BACKEND", "ERROR : ${error.message}")
+            }
+
+        )
+
+        queue.add(request)
+
+    }
 
     // 🔥 CREATE USER
     fun createUser(

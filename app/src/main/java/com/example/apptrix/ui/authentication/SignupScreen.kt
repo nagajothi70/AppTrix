@@ -167,6 +167,7 @@ fun SignupScreen(
 
                     // 🔥 ONLY THIS CHANGED (NO FIREBASE HERE)
                     viewModel.signup(
+                        context,
                         username,
                         email,
                         phone,

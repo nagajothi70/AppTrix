@@ -1,5 +1,6 @@
 package com.example.service
 
+import android.content.Context
 import android.util.Patterns
 import com.example.service.repository.AuthInterface
 import javax.inject.Inject
@@ -65,6 +66,7 @@ class AuthService @Inject constructor(
 
     // 🔥 SIGNUP
     override fun signup(
+        context: Context,
         username: String,
         email: String,
         phone: String,
@@ -87,6 +89,14 @@ class AuthService @Inject constructor(
                 firebaseService.saveUser(uid, userMap) {
 
                     it.onSuccess {
+
+                        firebaseService.saveUserToBackend(
+                            context,
+                            firebaseUID = uid,
+                            name = username,
+                            email = email,
+                            role = "student"
+                        )
 
                         firebaseService.sendEmailVerification { verifyResult ->
                             verifyResult.onSuccess {

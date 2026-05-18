@@ -45,5 +45,6 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:22.3.0")
     implementation("com.google.firebase:firebase-firestore-ktx:24.11.1")
     implementation("com.google.firebase:firebase-analytics:21.5.0")
+    implementation("com.android.volley:volley:1.2.1")
     implementation(project(":libraries:models"))
 }
