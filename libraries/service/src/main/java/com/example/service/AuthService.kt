@@ -126,8 +126,12 @@ class AuthService @Inject constructor(
     }
 
     // 🔥 VALIDATION
-    private fun isValidEmail(email: String) =
-        Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    private fun isValidEmail(email: String): Boolean{
+        val emailRegex =
+            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+
+        return email.matches(emailRegex.toRegex())
+    }
 
     override fun validateLogin(email: String, password: String): String {
         return when {

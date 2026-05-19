@@ -138,7 +138,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(canResend = false, timer = 90)
 
-            var time = 90
+            var time = 20
             while (time > 0) {
                 delay(1000)
                 time--

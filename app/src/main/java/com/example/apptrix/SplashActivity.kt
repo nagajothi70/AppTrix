@@ -2,6 +2,7 @@ package com.example.apptrix
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
-import android.graphics.Color
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
@@ -31,11 +31,15 @@ class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔥 Fullscreen fix
+        // 🔥 Full immersive splash
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // 🔥 Transparent status bar
+        // 🔥 Remove Android navigation overlay
+        window.isNavigationBarContrastEnforced = false
+
+        // 🔥 Transparent system bars
         window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
 
         setContent {
             SplashScreen {
@@ -73,6 +77,7 @@ class SplashActivity : ComponentActivity() {
         finish()
     }
 }
+
 @Composable
 fun SplashScreen(onFinish: () -> Unit) {
 
@@ -99,7 +104,10 @@ fun SplashScreen(onFinish: () -> Unit) {
             ),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             Text(
                 text = "AppTrix",

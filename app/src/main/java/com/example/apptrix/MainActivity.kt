@@ -14,17 +14,21 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🔥 Disable screenshot
+        // 🔥 Disable screenshots
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
         )
 
-        // 🔥 Fullscreen without white top space
+        // 🔥 Full immersive mode
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        // 🔥 Transparent status bar
+        // 🔥 Remove Android glass overlay
+        window.isNavigationBarContrastEnforced = false
+
+        // 🔥 Transparent system bars
         window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
 
         val startDestination =
             intent.getStringExtra("startDestination") ?: "login"
