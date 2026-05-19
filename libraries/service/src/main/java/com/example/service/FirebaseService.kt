@@ -24,7 +24,8 @@ class FirebaseService @Inject constructor() {
         role: String
     ) {
 
-        val url = "http://10.0.2.2:5000/save-user"
+       // val url = "http://10.0.2.2:5000/save-user" // emulator
+        val url = "http://10.12.112.186:5000/save-user" // ph
 
         val queue = Volley.newRequestQueue(context)
 

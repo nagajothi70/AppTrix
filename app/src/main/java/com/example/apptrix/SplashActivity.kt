@@ -20,15 +20,22 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
+import android.graphics.Color
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        actionBar?.hide()
+
+        // 🔥 Fullscreen fix
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // 🔥 Transparent status bar
+        window.statusBarColor = Color.TRANSPARENT
 
         setContent {
             SplashScreen {
