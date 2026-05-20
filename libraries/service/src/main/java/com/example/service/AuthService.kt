@@ -4,6 +4,11 @@ import android.content.Context
 import com.example.service.repository.AuthInterface
 import javax.inject.Inject
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.example.security.SessionManager
+
 
 class AuthService @Inject constructor(
     private val firebaseService: FirebaseService
@@ -19,6 +24,7 @@ class AuthService @Inject constructor(
 
     // 🔥 LOGIN
     override fun login(
+        context: Context,
         email: String,
         password: String,
         deviceId: String,
@@ -59,7 +65,22 @@ class AuthService @Inject constructor(
 
                     if (savedDeviceId == deviceId) {
 
-                        onResult(Result.success(Unit))
+                        val username = data?.get("username") as? String ?: ""
+                        val email = data?.get("email") as? String ?: ""
+                        val role = data?.get("role") as? String ?: ""
+
+                        CoroutineScope(Dispatchers.IO).launch {
+
+                            SessionManager(context).saveSession(
+                                uid = uid,
+                                username = username,
+                                email = email,
+                                role = role,
+                                deviceId = deviceId
+                            )
+
+                            onResult(Result.success(Unit))
+                        }
 
                     } else {
 

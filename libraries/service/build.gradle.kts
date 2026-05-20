@@ -47,4 +47,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics:21.5.0")
     implementation("com.android.volley:volley:1.2.1")
     implementation(project(":libraries:models"))
+    implementation(project(":libraries:security"))
+
+
 }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import com.example.security.SessionManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
@@ -52,21 +53,43 @@ class SplashActivity : ComponentActivity() {
 
         val user = FirebaseAuth.getInstance().currentUser
 
+        // 🔥 LOCAL SESSION
+        val sessionManager = SessionManager(this)
+
+        val isLoggedIn = sessionManager.isLoggedIn()
+
         val intent = when {
-            user == null -> {
+
+            // 🔥 NO LOCAL SESSION
+            !isLoggedIn -> {
+
                 Intent(this, MainActivity::class.java).apply {
                     putExtra("startDestination", "login")
                 }
             }
 
+            // 🔥 FIREBASE SESSION LOST
+            user == null -> {
+
+                sessionManager.clearSession()
+
+                Intent(this, MainActivity::class.java).apply {
+                    putExtra("startDestination", "login")
+                }
+            }
+
+            // 🔥 EMAIL NOT VERIFIED
             !user.isEmailVerified -> {
+
                 Intent(this, MainActivity::class.java).apply {
                     putExtra("startDestination", "email_verification")
                     putExtra("email", user.email ?: "")
                 }
             }
 
+            // 🔥 SUCCESS LOGIN
             else -> {
+
                 Intent(this, MainActivity::class.java).apply {
                     putExtra("startDestination", "biometric")
                 }

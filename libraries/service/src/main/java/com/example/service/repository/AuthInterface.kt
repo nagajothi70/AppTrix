@@ -23,6 +23,7 @@ interface AuthInterface {
     )
 
     fun login(
+        context: Context,
         email: String,
         password: String,
         deviceId: String,

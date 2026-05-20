@@ -81,6 +81,7 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("com.android.volley:volley:1.2.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // 🔥 TEST
     testImplementation("junit:junit:4.13.2")

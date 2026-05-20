@@ -129,7 +129,7 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    viewModel.login(email, password, deviceId)
+                    viewModel.login(context,email, password, deviceId)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

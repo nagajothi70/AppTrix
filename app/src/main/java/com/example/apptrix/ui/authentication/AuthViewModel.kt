@@ -66,7 +66,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun login(email: String, password: String, deviceId: String) {
+    fun login(context: Context,email: String, password: String, deviceId: String) {
 
         val validation = validateLogin(email, password)
 
@@ -77,7 +77,7 @@ class AuthViewModel @Inject constructor(
 
         _loginState.value = LoginState(isLoading = true)
 
-        repo.login(email, password, deviceId) { result ->
+        repo.login( context = context,email, password, deviceId) { result ->
 
             result.onSuccess {
                 _loginState.value = LoginState(isSuccess = true)
