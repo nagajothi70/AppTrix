@@ -15,17 +15,19 @@ class FirebaseService @Inject constructor() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-
+    // 🔥 SAVE USER TO BACKEND
     fun saveUserToBackend(
         context: Context,
         firebaseUID: String,
         name: String,
         email: String,
-        role: String
+        role: String,
+        phone: String,
+        deviceId: String
     ) {
 
-       // val url = "http://10.0.2.2:5000/save-user" // emulator
-        val url = "http://10.12.112.186:5000/save-user" // ph
+        // val url = "http://10.0.2.2:5000/save-user" // emulator
+        val url = "http://10.12.112.186:5000/save-user" // phone
 
         val queue = Volley.newRequestQueue(context)
 
@@ -35,6 +37,8 @@ class FirebaseService @Inject constructor() {
         jsonObject.put("name", name)
         jsonObject.put("email", email)
         jsonObject.put("role", role)
+        jsonObject.put("phone", phone)
+        jsonObject.put("deviceId", deviceId)
 
         val request = JsonObjectRequest(
             Request.Method.POST,
@@ -43,13 +47,14 @@ class FirebaseService @Inject constructor() {
 
             { response ->
 
-                Log.d("BACKEND", "SUCCESS : ${response}")
+                Log.d("BACKEND", "SUCCESS : $response")
 
             },
 
             { error ->
 
                 Log.e("BACKEND", "ERROR : ${error.message}")
+
             }
 
         )
@@ -66,11 +71,20 @@ class FirebaseService @Inject constructor() {
     ) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
+
                 val uid = auth.currentUser?.uid
+
                 if (it.isSuccessful && uid != null) {
+
                     onResult(Result.success(uid))
+
                 } else {
-                    onResult(Result.failure(it.exception ?: Exception("Signup failed")))
+
+                    onResult(
+                        Result.failure(
+                            it.exception ?: Exception("Signup failed")
+                        )
+                    )
                 }
             }
     }
@@ -81,22 +95,44 @@ class FirebaseService @Inject constructor() {
         data: Map<String, Any>,
         onResult: (Result<Unit>) -> Unit
     ) {
+
         db.collection("users")
             .document(uid)
             .set(data)
-            .addOnSuccessListener { onResult(Result.success(Unit)) }
-            .addOnFailureListener { onResult(Result.failure(it)) }
+            .addOnSuccessListener {
+
+                onResult(Result.success(Unit))
+
+            }
+            .addOnFailureListener {
+
+                onResult(Result.failure(it))
+
+            }
     }
 
     // 🔥 EMAIL VERIFICATION
     fun sendEmailVerification(
         onResult: (Result<Unit>) -> Unit
     ) {
+
         val user = auth.currentUser
+
         user?.sendEmailVerification()
             ?.addOnCompleteListener {
-                if (it.isSuccessful) onResult(Result.success(Unit))
-                else onResult(Result.failure(it.exception ?: Exception("Verification failed")))
+
+                if (it.isSuccessful) {
+
+                    onResult(Result.success(Unit))
+
+                } else {
+
+                    onResult(
+                        Result.failure(
+                            it.exception ?: Exception("Verification failed")
+                        )
+                    )
+                }
             }
     }
 
@@ -106,10 +142,25 @@ class FirebaseService @Inject constructor() {
         password: String,
         onResult: (Result<Unit>) -> Unit
     ) {
-        auth.signInWithEmailAndPassword(email.trim(), password.trim())
+
+        auth.signInWithEmailAndPassword(
+            email.trim(),
+            password.trim()
+        )
             .addOnCompleteListener {
-                if (it.isSuccessful) onResult(Result.success(Unit))
-                else onResult(Result.failure(it.exception ?: Exception("Login failed")))
+
+                if (it.isSuccessful) {
+
+                    onResult(Result.success(Unit))
+
+                } else {
+
+                    onResult(
+                        Result.failure(
+                            it.exception ?: Exception("Login failed")
+                        )
+                    )
+                }
             }
     }
 
@@ -118,15 +169,27 @@ class FirebaseService @Inject constructor() {
         uid: String,
         onResult: (Result<Map<String, Any>?>) -> Unit
     ) {
+
         db.collection("users")
             .document(uid)
             .get()
-            .addOnSuccessListener { onResult(Result.success(it.data)) }
-            .addOnFailureListener { onResult(Result.failure(it)) }
+            .addOnSuccessListener {
+
+                onResult(Result.success(it.data))
+
+            }
+            .addOnFailureListener {
+
+                onResult(Result.failure(it))
+
+            }
     }
 
     fun getCurrentUserUid(): String? = auth.currentUser?.uid
-    fun isEmailVerified(): Boolean = auth.currentUser?.isEmailVerified == true
+
+    fun isEmailVerified(): Boolean =
+        auth.currentUser?.isEmailVerified == true
+
     fun signOut() = auth.signOut()
 
     // 🔥 PASSWORD RESET
@@ -134,10 +197,22 @@ class FirebaseService @Inject constructor() {
         email: String,
         onResult: (Result<String>) -> Unit
     ) {
+
         auth.sendPasswordResetEmail(email)
             .addOnCompleteListener {
-                if (it.isSuccessful) onResult(Result.success("Reset link sent"))
-                else onResult(Result.failure(it.exception ?: Exception("Error")))
+
+                if (it.isSuccessful) {
+
+                    onResult(Result.success("Reset link sent"))
+
+                } else {
+
+                    onResult(
+                        Result.failure(
+                            it.exception ?: Exception("Error")
+                        )
+                    )
+                }
             }
     }
 
@@ -145,20 +220,40 @@ class FirebaseService @Inject constructor() {
     fun resendEmailVerification(
         onResult: (Result<String>) -> Unit
     ) {
+
         val user = auth.currentUser
 
         if (user == null) {
-            onResult(Result.failure(Exception("Session expired. Please signup again.")))
+
+            onResult(
+                Result.failure(
+                    Exception("Session expired. Please signup again.")
+                )
+            )
+
             return
         }
 
         user.reload().addOnCompleteListener {
+
             user.sendEmailVerification()
                 .addOnCompleteListener { task ->
+
                     if (task.isSuccessful) {
-                        onResult(Result.success("Verification email sent ✔"))
+
+                        onResult(
+                            Result.success(
+                                "Verification email sent ✔"
+                            )
+                        )
+
                     } else {
-                        onResult(Result.failure(task.exception ?: Exception("Failed ❌")))
+
+                        onResult(
+                            Result.failure(
+                                task.exception ?: Exception("Failed ❌")
+                            )
+                        )
                     }
                 }
         }

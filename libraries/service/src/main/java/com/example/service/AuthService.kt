@@ -116,11 +116,13 @@ class AuthService @Inject constructor(
                     it.onSuccess {
 
                         firebaseService.saveUserToBackend(
-                            context,
+                            context = context,
                             firebaseUID = uid,
                             name = username,
                             email = email,
-                            role = "student"
+                            phone = phone,
+                            role = "student",
+                            deviceId = deviceId
                         )
 
                         firebaseService.sendEmailVerification { verifyResult ->
