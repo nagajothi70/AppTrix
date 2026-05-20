@@ -28,14 +28,16 @@ fun ForgotPasswordScreen(
 
     var email by remember { mutableStateOf("") }
 
-    // 🔥 Handle result
     LaunchedEffect(state) {
 
-        state.message?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-        }
-
         if (state.isSuccess) {
+
+            Toast.makeText(
+                context,
+                "Reset link sent successfully",
+                Toast.LENGTH_LONG
+            ).show()
+
             navController.popBackStack()
         }
     }
@@ -64,12 +66,36 @@ fun ForgotPasswordScreen(
 
             Spacer(Modifier.height(30.dp))
 
-            AppTextField(email, { email = it }, "Enter your email")
+            AppTextField(
+                email,
+                {
+                    email = it
+                    viewModel.clearForgotError()
+                },
+                "Enter your email"
+            )
+
+            Spacer(Modifier.height(6.dp))
+
+            // 🔥 ERROR TEXT
+            state.message?.let {
+
+                if (!state.isSuccess) {
+
+                    Text(
+                        text = it,
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
+                }
+            }
 
             Spacer(Modifier.height(20.dp))
 
             Button(
-                onClick = { viewModel.sendReset(email) },
+                onClick = {
+                    viewModel.sendReset(email)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -81,6 +107,7 @@ fun ForgotPasswordScreen(
         }
 
         if (state.isLoading) {
+
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center)
             )

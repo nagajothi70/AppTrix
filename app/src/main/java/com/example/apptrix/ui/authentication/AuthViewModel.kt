@@ -134,6 +134,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun clearForgotError() {
+
+        _forgotState.value = ForgotPasswordState()
+    }
+
     private fun startTimer() {
         viewModelScope.launch {
             _state.value = _state.value.copy(canResend = false, timer = 90)

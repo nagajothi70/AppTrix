@@ -1,16 +1,15 @@
 package com.example.service
 
 import android.content.Context
-import android.util.Patterns
 import com.example.service.repository.AuthInterface
 import javax.inject.Inject
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthService @Inject constructor(
     private val firebaseService: FirebaseService
 ) : AuthInterface {
 
-    // 🔥 OTP
-
+    private val db = FirebaseFirestore.getInstance()
 
     override fun resendVerification(
         onResult: (Result<String>) -> Unit
@@ -39,8 +38,15 @@ class AuthService @Inject constructor(
             val isVerified = firebaseService.isEmailVerified()
 
             if (uid == null || !isVerified) {
+
                 firebaseService.signOut()
-                onResult(Result.failure(Exception("Please verify your email first")))
+
+                onResult(
+                    Result.failure(
+                        Exception("Please verify your email first")
+                    )
+                )
+
                 return@login
             }
 
@@ -48,17 +54,33 @@ class AuthService @Inject constructor(
 
                 userResult.onSuccess { data ->
 
-                    val savedDeviceId = data?.get("deviceId") as? String
+                    val savedDeviceId =
+                        data?.get("deviceId") as? String
 
                     if (savedDeviceId == deviceId) {
+
                         onResult(Result.success(Unit))
+
                     } else {
+
                         firebaseService.signOut()
-                        onResult(Result.failure(Exception("Account already used on another device")))
+
+                        onResult(
+                            Result.failure(
+                                Exception(
+                                    "Account already used on another device"
+                                )
+                            )
+                        )
                     }
 
                 }.onFailure {
-                    onResult(Result.failure(Exception("Database error")))
+
+                    onResult(
+                        Result.failure(
+                            Exception("Database error")
+                        )
+                    )
                 }
             }
         }
@@ -80,10 +102,13 @@ class AuthService @Inject constructor(
             result.onSuccess { uid ->
 
                 val userMap = mapOf(
+
                     "username" to username,
                     "email" to email,
                     "phone" to phone,
-                    "deviceId" to deviceId
+                    "deviceId" to deviceId,
+                    "role" to "student"
+
                 )
 
                 firebaseService.saveUser(uid, userMap) {
@@ -99,46 +124,111 @@ class AuthService @Inject constructor(
                         )
 
                         firebaseService.sendEmailVerification { verifyResult ->
+
                             verifyResult.onSuccess {
+
                                 onResult(Result.success(Unit))
+
                             }.onFailure {
+
                                 onResult(Result.failure(it))
                             }
                         }
 
                     }.onFailure {
+
                         onResult(Result.failure(it))
                     }
                 }
 
             }.onFailure {
+
                 onResult(Result.failure(it))
             }
         }
     }
 
-    // 🔥 RESET
+    // 🔥 RESET PASSWORD
     override fun sendPasswordReset(
         email: String,
         onResult: (Result<String>) -> Unit
     ) {
-        firebaseService.sendPasswordReset(email, onResult)
+
+        if (email.isBlank()) {
+
+            onResult(
+                Result.failure(
+                    Exception("Enter email")
+                )
+            )
+
+            return
+        }
+
+        db.collection("users")
+            .whereEqualTo("email", email.trim())
+            .whereEqualTo("role", "student")
+            .get()
+
+            .addOnSuccessListener { documents ->
+
+                if (documents.isEmpty) {
+
+                    onResult(
+                        Result.failure(
+                            Exception(
+                                "Student account not found"
+                            )
+                        )
+                    )
+
+                    return@addOnSuccessListener
+                }
+
+                firebaseService.sendPasswordReset(
+                    email.trim(),
+                    onResult
+                )
+            }
+
+            .addOnFailureListener {
+
+                onResult(
+                    Result.failure(
+                        Exception("Database error")
+                    )
+                )
+            }
     }
 
     // 🔥 VALIDATION
-    private fun isValidEmail(email: String): Boolean{
+    private fun isValidEmail(email: String): Boolean {
+
         val emailRegex =
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
 
         return email.matches(emailRegex.toRegex())
     }
 
-    override fun validateLogin(email: String, password: String): String {
+    override fun validateLogin(
+        email: String,
+        password: String
+    ): String {
+
         return when {
-            email.isBlank() && password.isBlank() -> "Fill all fields"
-            email.isBlank() -> "Email required"
-            !isValidEmail(email) -> "Invalid email format"
-            password.isBlank() -> "Password required"
+
+            email.isBlank() && password.isBlank() ->
+                "Fill all fields"
+
+            email.isBlank() ->
+                "Email required"
+
+            !isValidEmail(email) ->
+                "Invalid email format"
+
+            password.isBlank() ->
+                "Password required"
+
             else -> ""
         }
     }
@@ -150,18 +240,30 @@ class AuthService @Inject constructor(
         password: String
     ): String {
 
-        if (username.isBlank()) return "Enter username"
-        if (email.isBlank()) return "Enter email"
-        if (phone.isBlank()) return "Enter mobile number"
-        if (!isValidEmail(email)) return "Invalid email format"
+        if (username.isBlank())
+            return "Enter username"
 
-        val passwordError = validatePassword(password)
-        if (passwordError.isNotEmpty()) return passwordError
+        if (email.isBlank())
+            return "Enter email"
+
+        if (!isValidEmail(email))
+            return "Invalid email format"
+
+        if (phone.isBlank())
+            return "Enter mobile number"
+
+        val passwordError =
+            validatePassword(password)
+
+        if (passwordError.isNotEmpty())
+            return passwordError
 
         return ""
     }
 
-    private fun validatePassword(password: String): String {
+    private fun validatePassword(
+        password: String
+    ): String {
 
         if (password.length < 8)
             return "Password must be at least 8 characters"
